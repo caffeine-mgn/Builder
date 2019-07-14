@@ -1,0 +1,166 @@
+apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.kotlin.multiplatform'
+kotlin {
+    def nativeEntryPoint = 'pw.binom.builder.main'
+
+    linuxX64 { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+            }
+        }
+    }
+
+    linuxArm32Hfp { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+            }
+        }
+    }
+
+    mingwX64 { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+            }
+        }
+    }
+
+    mingwX86 { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+            }
+        }
+    }
+
+    jvm()
+/*
+    targets {
+
+        fromPreset(kotlin.presets.linuxX64, 'linuxX64') {
+            compilations.main.outputKinds 'executable'
+            compilations.main.entryPoint = 'pw.binom.builder.main'
+        }
+
+        fromPreset(kotlin.presets.linuxArm32Hfp, 'linuxArm32') {
+            compilations.main.outputKinds 'executable'
+            compilations.main.entryPoint = 'pw.binom.builder.main'
+        }
+
+        fromPreset(kotlin.presets.mingwX64, 'mingw') {
+            compilations.main.outputKinds 'executable'
+            compilations.main.entryPoint = 'pw.binom.builder.main'
+        }
+
+        fromPreset(kotlin.presets.mingwX86, 'mingwX86') {
+            compilations.main.outputKinds 'executable'
+            compilations.main.entryPoint = 'pw.binom.builder.main'
+        }
+
+        presets.forEach {
+            println("target=${it.name}")
+        }
+
+        jvm()
+    }
+*/
+    presets.forEach {
+        println("target=${it.name}")
+    }
+
+    sourceSets {
+
+        commonMain {
+            dependencies {
+                api "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+                api "pw.binom.io:core:$network_version"
+                api "pw.binom.io:httpServer:$network_version"
+                api "pw.binom.io:httpClient:$network_version"
+                api "pw.binom.io:process:$network_version"
+                api "pw.binom.io:file:$network_version"
+                api "pw.binom.io:json:$network_version"
+                api "pw.binom.io:job:$network_version"
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+
+        nativeMain {
+            dependencies {
+                dependsOn commonMain
+
+
+            }
+        }
+
+        mingwX64Main {
+            dependencies {
+                dependsOn linuxX64Main
+            }
+        }
+
+        mingwX86Main {
+            dependencies {
+                dependsOn mingwX64Main
+            }
+        }
+
+
+        linuxX64Main {
+            dependencies {
+                dependsOn nativeMain
+            }
+        }
+
+        linuxArm32HfpMain {
+            dependencies {
+                dependsOn linuxX64Main
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+            }
+        }
+
+        jvmTest {
+            dependencies {
+                implementation kotlin('test-junit')
+            }
+        }
+    }
+}
+
+jvmJar {
+    with {
+        from {
+            (configurations.jvmRuntimeClasspath).collect {
+                it.isDirectory() ? it : zipTree(it)
+            }
+        } {
+            exclude "META-INF/*.SF"
+            exclude "META-INF/*.DSA"
+            exclude "META-INF/*.RSA"
+        }
+    }
+    manifest {
+        attributes 'Main-Class': "pw.binom.builder.MainKt"
+    }
+}
+
+task runMainExecutableJvm(dependsOn: jvmJar, group: "run") {
+
+    doLast {
+        def args1 = [jvmJar.archiveFile.get()]
+        args1.addAll(System.getenv("ARGS").split(" "))
+        javaexec { main = "-jar"; args args1 }
+    }
+}
