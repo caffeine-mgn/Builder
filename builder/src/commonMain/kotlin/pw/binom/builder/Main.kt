@@ -1,20 +1,11 @@
 package pw.binom.builder
 
 import pw.binom.Environment
-import pw.binom.URL
-import pw.binom.async
-import pw.binom.builder.common.ExecuteJob
-import pw.binom.builder.common.NodeStatus
+import pw.binom.builder.client.Client
+import pw.binom.builder.common.JobEntity
 import pw.binom.builder.node.Node
 import pw.binom.builder.server.Server
 import pw.binom.getEnv
-import pw.binom.io.httpClient.AsyncHttpClient
-import pw.binom.io.socket.ConnectionManager
-import pw.binom.io.use
-import pw.binom.io.utf8Reader
-import pw.binom.json.JsonDomReader
-import pw.binom.json.JsonReader
-import pw.binom.json.array
 
 fun main(args: Array<String>) {
     execute(args, CmdRunner())
@@ -91,9 +82,64 @@ class CmdRunner : Function() {
                     "server" to RunServer(),
                     "node" to RunNode(),
                     "start" to StartJob(),
-                    "nodes" to NodesCmd()
+                    "nodes" to NodesCmd(),
+                    "tail" to TailCmd(),
+                    "cancel" to CancelCmd(),
+                    "executes" to ExecutesCmd(),
+                    "tasks" to TasksJob()
             )
+}
 
+class TasksJob : Function() {
+    override val description: String?
+        get() = "Print task by path"
+    private val path by param("path").default { "/" }.require()
+
+    private val serverUrl by param("server")
+            .default { Environment.getEnv(SERVER_ADDR) }
+            .require()
+            .url()
+
+    override fun execute(): Result =
+            action {
+                val client = Client(serverUrl)
+                val tasks = client.tasks(path)
+                val table = Table()
+                table.addHeader("Name")
+                table.addHeader("Type")
+                tasks.forEach {
+                    val type = when (it) {
+                        is JobEntity.Job -> "JOB"
+                        is JobEntity.Folder -> "FOLDER"
+                    }
+                    table.row(it.name, type)
+                }
+                table.print(true, ConsoleAppendable)
+            }
+}
+
+class ExecutesCmd : Function() {
+    override val description: String?
+        get() = "Print task by path"
+
+    private val serverUrl by param("server")
+            .default { Environment.getEnv(SERVER_ADDR) }
+            .require()
+            .url()
+
+    override fun execute(): Result =
+            action {
+                val client = Client(serverUrl)
+                val tasks = client.executions()
+                val table = Table()
+                table.addHeader("Path")
+                table.addHeader("Build Number")
+                table.addHeader("Node")
+                tasks.forEach {
+                    table.row(it.job.path, it.job.buildNumber.toString(), it.node?.id ?: "")
+                }
+                table.print(true, ConsoleAppendable)
+            }
 }
 
 class StartJob : Function() {
@@ -105,31 +151,53 @@ class StartJob : Function() {
 
     override fun execute(): Result =
             action {
-                val manager = ConnectionManager()
-                val client = AsyncHttpClient(manager)
-                var done = false
-                async {
-                    client.request("POST", URL("${serverUrl.toString().removeSuffix("/")}/tasks/$jobId/execute")).use {
-                        when (val e = it.responseCode()) {
-                            200, 204 -> {
-                                val job = ExecuteJob.read(it.inputStream.utf8Reader())
-                                println("Job ${job.path}:${job.buildNumber} started")
-                            }
-                            else -> println("Can't start job $jobId. Server returned status $e")
-                        }
-                    }
-                    done = true
-                }
-
-                while (!done) {
-                    manager.update(1000)
-                }
-                client.close()
-                manager.close()
+                val client = Client(serverUrl)
+                val exe = client.execute(jobId)
+                println("Start job ${exe.path}:${exe.buildNumber}")
             }
 
     override val description: String?
         get() = "Starts Job"
+}
+
+class TailCmd : Function() {
+
+    private val jobId by param("job").require()
+    private val build by param("build").require().long()
+    private val serverUrl by param("server")
+            .default { Environment.getEnv(SERVER_ADDR) }
+            .require()
+            .url()
+
+    override val description: String?
+        get() = "Tail build process output"
+
+    override fun execute(): Result =
+            action {
+                val client = Client(serverUrl)
+                client.tail(job = jobId, buildNumber = build, appendable = ConsoleAppendable)
+            }
+
+}
+
+class CancelCmd : Function() {
+
+    private val jobId by param("job").require()
+    private val build by param("build").require().long()
+    private val serverUrl by param("server")
+            .default { Environment.getEnv(SERVER_ADDR) }
+            .require()
+            .url()
+
+    override val description: String?
+        get() = "Cancel the job"
+
+    override fun execute(): Result =
+            action {
+                val client = Client(serverUrl)
+                client.cancel(job = jobId, buildNumber = build)
+            }
+
 }
 
 class NodesCmd : Function() {
@@ -141,42 +209,20 @@ class NodesCmd : Function() {
 
     override fun execute(): Result =
             action {
-                val manager = ConnectionManager()
-                val client = AsyncHttpClient(manager)
-                var done = false
-                async {
-                    client.request("GET", URL("${serverUrl.toString().removeSuffix("/")}/nodes")).use {
-                        when (val e = it.responseCode()) {
-                            200 -> {
-                                val r = JsonDomReader()
-                                JsonReader(it.inputStream.utf8Reader()).accept(r)
-                                val table = Table()
-                                table.addHeader("ID")
-                                table.addHeader("Data Center")
-                                table.addHeader("Platform")
-                                table.addHeader("Job Name")
-                                table.addHeader("Job Build Number")
-                                r.node.array.map {
-                                    NodeStatus.read(it)
-                                }.forEach {
-                                    if (it.job == null)
-                                        table.row(it.node.id, it.node.dataCenter, it.node.platform.name)
-                                    else
-                                        table.row(it.node.id, it.node.dataCenter, it.node.platform.name, it.job.path, it.job.buildNumber.toString())
-                                }
-                                table.print(drawWithHeader, ConsoleAppendable)
-                            }
-                            else -> println("Can't get nodes. Server returned status $e")
-                        }
-                    }
-                    done = true
+                val client = Client(serverUrl)
+                val table = Table()
+                table.addHeader("ID")
+                table.addHeader("Data Center")
+                table.addHeader("Platform")
+                table.addHeader("Job Name")
+                table.addHeader("Job Build Number")
+                client.status().forEach {
+                    if (it.job == null)
+                        table.row(it.node.id, it.node.dataCenter, it.node.platform.name)
+                    else
+                        table.row(it.node.id, it.node.dataCenter, it.node.platform.name, it.job.path, it.job.buildNumber.toString())
                 }
-
-                while (!done) {
-                    manager.update(1000)
-                }
-                client.close()
-                manager.close()
+                table.print(drawWithHeader, ConsoleAppendable)
             }
 
     override val description: String?

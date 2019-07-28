@@ -10,7 +10,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class ExecuteControl : Closeable {
+class ExecuteScheduler : Closeable {
 
     override fun close() {
         waitList.forEach {
@@ -20,9 +20,24 @@ class ExecuteControl : Closeable {
 
     private class WaitRecord(val continuation: Continuation<JobDescription?>, var timeout: Long, val platform: Platform)
 
-    private val tasks = ArrayList<JobDescription>()
+    private val _tasks = ArrayList<JobDescription>()
     private val waitList = ArrayList<WaitRecord>()
     private var lastTime = Thread.currentTimeMillis()
+
+    val tasks: List<JobDescription>
+        get() = _tasks
+
+    fun cancel(job: ExecuteJob): Boolean {
+        val it = _tasks.iterator()
+        while (it.hasNext()) {
+            val e = it.next()
+            if (e.path == job.path && e.buildNumber == job.buildNumber) {
+                it.remove()
+                return true
+            }
+        }
+        return false
+    }
 
     fun update() {
         val dt = Thread.currentTimeMillis() - lastTime
@@ -39,9 +54,11 @@ class ExecuteControl : Closeable {
     }
 
     suspend fun getExecute(platform: Platform, timeout: Long): JobDescription? {
-        val job = tasks.asSequence().filter { it.platform == null || it.platform == platform }.firstOrNull()
-        if (job != null)
+        val job = _tasks.asSequence().filter { it.platform == null || it.platform == platform }.firstOrNull()
+        if (job != null) {
+            _tasks.remove(job)
             return job
+        }
         return suspendCoroutine { v ->
             waitList += WaitRecord(v, timeout, platform)
         }
@@ -58,7 +75,7 @@ class ExecuteControl : Closeable {
             w.continuation.resume(ej)
             ej.toExecuteJob()
         } else {
-            tasks.add(ej)
+            _tasks.add(ej)
             ej.toExecuteJob()
         }
     }

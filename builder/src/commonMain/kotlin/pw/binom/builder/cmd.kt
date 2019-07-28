@@ -225,6 +225,10 @@ fun Value<String>.notBlank() = convert {
     it
 }
 
+fun Value<String>.long() = convert {
+    it.toLong()
+}
+
 fun Value<String>.url() = convert {
     try {
         URL(it)

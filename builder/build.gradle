@@ -2,7 +2,6 @@ apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 kotlin {
     def nativeEntryPoint = 'pw.binom.builder.main'
-
     linuxX64 { // Use your target instead.
         binaries {
             executable {
@@ -82,6 +81,7 @@ kotlin {
                 api "pw.binom.io:file:$network_version"
                 api "pw.binom.io:json:$network_version"
                 api "pw.binom.io:job:$network_version"
+                api "pw.binom.io:logger:$network_version"
             }
         }
 
@@ -138,7 +138,36 @@ kotlin {
         }
     }
 }
+/*
 
+task generateJsSource(type: ResourceSourceGenerator){
+    dependsOn compileKotlinJs
+    destination=file("src/build/gen/server/resources.tk")
+    packageName="pw.binom.builder"
+    objectName="Resources"
+}
+
+
+compileKotlinJvm{
+    dependsOn generateJsSource
+}
+
+compileKotlinLinuxArm32Hfp{
+    dependsOn generateJsSource
+}
+
+compileKotlinLinuxX64{
+    dependsOn generateJsSource
+}
+
+compileKotlinMingwX64{
+    dependsOn generateJsSource
+}
+
+compileKotlinMingwX86{
+    dependsOn generateJsSource
+}
+*/
 jvmJar {
     with {
         from {
@@ -155,7 +184,6 @@ jvmJar {
         attributes 'Main-Class': "pw.binom.builder.MainKt"
     }
 }
-
 task runMainExecutableJvm(dependsOn: jvmJar, group: "run") {
 
     doLast {

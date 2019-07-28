@@ -2,6 +2,7 @@ package pw.binom.builder.server
 
 import pw.binom.Date
 import pw.binom.Thread
+import pw.binom.builder.OutType
 import pw.binom.builder.common.ExecuteJob
 import pw.binom.io.*
 import pw.binom.io.file.*
@@ -22,9 +23,17 @@ class TaskManager(val root: File) {
         private val statusFile = "status.txt"
         private val startedFile = "started.txt"
         private val stoppedFile = "stopped.txt"
+
         fun finish(buildNum: Long, ok: Boolean) {
             FileOutputStream(File(buildNum(buildNum), statusFile)).use {
                 val type = if (ok) Status.Type.FINISHED_OK else Status.Type.FINISHED_ERROR
+                it.utf8Appendable().append(type.name).append("\n").append(Thread.currentTimeMillis().toString()).append("\n")
+            }
+        }
+
+        fun cancel(buildNum: Long) {
+            FileOutputStream(File(buildNum(buildNum), statusFile)).use {
+                val type = Status.Type.CANCELED
                 it.utf8Appendable().append(type.name).append("\n").append(Thread.currentTimeMillis().toString()).append("\n")
             }
         }
@@ -52,7 +61,7 @@ class TaskManager(val root: File) {
             }.toLong()
         }
 
-        private fun getStatus(buildNum: Long): Status {
+        fun getStatus(buildNum: Long): Status {
             val f = File(buildNum(buildNum), statusFile)
             if (!f.isFile) {
                 return Status(Status.Type.PREPARE, Thread.currentTimeMillis())
@@ -74,15 +83,15 @@ class TaskManager(val root: File) {
 
         fun writeStdout(buildNum: Long, txt: String) {
             process(buildNum)
-            FileOutputStream(File(buildNum(buildNum), "stdout.txt"), true).use {
-                it.utf8Appendable().append(Output.STDOUT.name).append(":").append(txt).append("\n")
+            FileOutputStream(File(buildNum(buildNum), "out.txt"), true).use {
+                it.utf8Appendable().append(OutType.STDOUT.name).append(":").append(txt).append("\n")
             }
         }
 
         fun writeStderr(buildNum: Long, txt: String) {
             process(buildNum)
-            FileOutputStream(File(buildNum(buildNum), "stdout.txt"), true).use {
-                it.utf8Appendable().append(Output.STDERR.name).append(":").append(txt).append("\n")
+            FileOutputStream(File(buildNum(buildNum), "out.txt"), true).use {
+                it.utf8Appendable().append(OutType.STDERR.name).append(":").append(txt).append("\n")
             }
         }
 

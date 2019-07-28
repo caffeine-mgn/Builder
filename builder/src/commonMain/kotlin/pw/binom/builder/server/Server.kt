@@ -56,7 +56,8 @@ class Status(val type: Type, val time: Long) {
         PREPARE,
         PROCESS,
         FINISHED_OK,
-        FINISHED_ERROR
+        FINISHED_ERROR,
+        CANCELED
     }
 }
 
@@ -97,17 +98,17 @@ class AsyncStack<T> : Closeable {
 }
 
 class Server(val jobsPath: File, val bind: List<Pair<String, Int>>) {
-    val status = NodesState()
+    val taskManager = TaskManager(jobsPath)
+    val executionControl = ExecutionControl(taskManager)
+    val executeScheduler = ExecuteScheduler()
     fun start() {
-        val executeControl = ExecuteControl()
-        val taskManager = TaskManager(jobsPath)
         val manager = ConnectionManager()
         val server = HttpServer(
                 manager = manager,
                 handler = RootHandler(
                         taskManager = taskManager,
-                        executeControl = executeControl,
-                        status = status
+                        executeScheduler = executeScheduler,
+                        executionControl = executionControl
                 )
         )
         bind.forEach {
@@ -115,7 +116,7 @@ class Server(val jobsPath: File, val bind: List<Pair<String, Int>>) {
         }
 
         while (true) {
-            executeControl.update()
+            executeScheduler.update()
             manager.update(1000)
         }
     }

@@ -26,7 +26,7 @@ class Node(url: String, val id: String, val dataCenter: String, val bashPath: Fi
             while (true) {
                 try {
                     LOG.info("Getting event")
-                    val r = ff.request("POST", URL("$url/event"))
+                    val r = ff.request("GET", URL("$url/tasks/wait"))
                     val sb = StringBuilder()
                     nodeInfo.write(sb.asAsync())
                     r.addRequestHeader("Content-Length", sb.length.toString())
@@ -55,7 +55,7 @@ class Node(url: String, val id: String, val dataCenter: String, val bashPath: Fi
                     LOG.info("Build Done")
                 } catch (e: IOException) {
                     LOG.warn("ERROR: $e")
-                    Thread.sleep(1000)
+                    Thread.sleep(30_000)
                     continue
                 }
             }

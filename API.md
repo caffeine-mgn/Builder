@@ -18,8 +18,12 @@
 returns object `ExecuteJob`
 
 ### Wait a new event
-`POST` `/event`
+`POST` `/tasks/wait`
 Client must send object `NodeInfo`. Server returns `JobDescription`. This request is long polling
+
+### Wait until job is done
+`GET` `/execution/.../join`
+Wait until job is done. When job is done will return `OK` or `BAD`
 
 ### Write STDOUT
 `POST` `/execution/.../stdout`
@@ -31,7 +35,9 @@ Client must send raw stderr of program
 
 ### Declare end of job
 `POST` `/execution/.../finish`
-Client must send raw stderr of program
+
+### Cancel executing job
+`POST` `/execution/.../cancel`
 
 ## Objects
 ### ExecuteJob
