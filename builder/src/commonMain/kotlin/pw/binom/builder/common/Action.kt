@@ -7,6 +7,7 @@ import pw.binom.json.*
 /**
  * Действия, который должен проделать сборочный узел
  */
+/*
 sealed class Action {
     object Cancel : Action()
     object ClearBuilds : Action()
@@ -34,7 +35,7 @@ sealed class Action {
         }
 
         fun read(node: JsonNode): Action {
-            val type = node.obj["type"]!!.text
+            val type = node.obj["type"]!!.string
             return when (type) {
                 "cancel" -> Cancel
                 "clearBuilds" -> ClearBuilds
@@ -43,3 +44,4 @@ sealed class Action {
         }
     }
 }
+*/

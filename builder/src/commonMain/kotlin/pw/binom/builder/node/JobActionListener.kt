@@ -1,43 +1,40 @@
 package pw.binom.builder.node
-
+/*
 import pw.binom.*
-import pw.binom.builder.common.Action
-import pw.binom.builder.common.ExecuteJob
+import pw.binom.builder.remote.JobProcess
 import pw.binom.io.Closeable
 import pw.binom.io.IOException
 import pw.binom.io.httpClient.AsyncHttpClient
 import pw.binom.io.socket.ConnectionManager
-import pw.binom.io.use
-import pw.binom.io.utf8Reader
 import pw.binom.job.Task
 import pw.binom.job.Worker
 import pw.binom.job.execute
-import pw.binom.json.JsonDomReader
-import pw.binom.json.JsonReader
-import pw.binom.json.array
+import pw.binom.krpc.Struct
+import pw.binom.thread.FreezedStack
+import pw.binom.thread.Thread
 
-class JobActionListener(url: URL, job: ExecuteJob) : Closeable {
+class JobActionListener(url: URL, job: JobProcess) : Closeable {
     override fun close() {
         job.interrupt()
     }
 
-    val event = FreezedStack<Action>().asFiFoQueue()
-    val actions: Queue<Action>
+    val event = FreezedStack<Struct>().asFiFoQueue()
+    val actions: Queue<Struct>
         get() = event
 
     private val job = Worker.execute {
         JobThread(url, job, event)
     }
 
-    class JobThread(val url: URL, val job: ExecuteJob, val queue: AppendableQueue<Action>) : Task() {
-
-        private val manager = ConnectionManager()
-        private val client = AsyncHttpClient(manager)
-
-        fun exe() {
+    class JobThread(val url: URL, val job: JobProcess, val queue: AppendableQueue<Struct>) : Task() {
+        override fun execute() {
+            val manager = ConnectionManager()
+            val client = AsyncHttpClient(manager)
             async {
                 while (!isInterrupted) {
                     try {
+                        TODO()
+                        /*
                         client.request("GET", URL(url.toString().removeSuffix("/") + "/execution/${job.path}/${job.buildNumber}/actions")).use {
                             when (val code = it.responseCode()) {
                                 200 -> {
@@ -45,7 +42,7 @@ class JobActionListener(url: URL, job: ExecuteJob) : Closeable {
                                     val r = JsonDomReader()
                                     JsonReader(it.inputStream.utf8Reader()).accept(r)
                                     r.node.array.map {
-                                        Action.read(it)
+                                        Action.read(it!!)
                                     }.forEach {
                                         queue.push(it)
                                         count++
@@ -54,16 +51,13 @@ class JobActionListener(url: URL, job: ExecuteJob) : Closeable {
                                 else-> println("Invalid response code: $code")
                             }
                         }
+                        */
                     } catch (e: IOException) {
                         println("ERROR: $e")
                     }
                     Thread.sleep(1_000)
                 }
             }
-        }
-
-        override fun execute() {
-            exe()
             while (!isInterrupted) {
                 manager.update(1000)
             }
@@ -72,3 +66,4 @@ class JobActionListener(url: URL, job: ExecuteJob) : Closeable {
 
     }
 }
+*/

@@ -1,0 +1,112 @@
+package pw.binom.builder.remote
+
+struct ActionCancel{
+}
+
+struct JobProcess {
+    long buildNumber
+    string path
+}
+
+struct JobStatus {
+    JobProcess process
+    long? start
+    long? end
+    string status
+}
+
+/**
+ * Информация о конкретной сборке
+ **/
+struct BuildDescription {
+    long buildNumber
+    string path
+    string cmd
+    array<EnvVar> env
+    array<string> include
+    array<string> exclude
+}
+
+/**
+ * Описание работы
+ **/
+struct JobInformation {
+    string cmd
+    array<EnvVar> env
+    array<string> include
+    array<string> exclude
+}
+
+struct EnvVar {
+    string name
+    string value
+}
+
+struct TaskItem {
+    string name
+    string path
+    bool isTask
+}
+
+struct LastOutDto {
+    string text
+    long skipped
+}
+
+struct Event_TaskStatusChange {
+    JobProcess process
+    string status
+}
+
+struct Event_AttachNode {
+    NodeDescription node
+}
+
+struct Event_DetachNode {
+    NodeDescription node
+}
+
+struct Event_ChangeJobNode {
+    NodeDescription node
+    JobProcess? job
+}
+
+struct NodeDescription {
+    string id
+    array<string> tags
+}
+
+struct UnknownException:Exception{
+    string msg
+}
+
+struct NodeStatus {
+    NodeDescription description
+    JobProcess? process
+}
+
+interface NodesService {
+    bool? pass(NodeDescription node, JobProcess? process)
+    array<NodeStatus> getNodes()
+}
+
+interface TaskManagerService {
+    array<TaskItem> getItems(string path)
+    TaskItem? createJob(string path, string name)
+    TaskItem? createFolder(string path, string name)
+    JobInformation? getJob(string path)
+    JobInformation? updateJob(string path, JobInformation jobInformation)
+    array<JobStatus> getJobBuildings(string path)
+    LastOutDto getLastOutput(JobProcess process, int size)
+}
+
+interface ProcessService {
+    JobProcess execute(string path)
+    BuildDescription? popBuild(NodeDescription node)
+    void cancel(JobProcess task)
+    void cancelled(JobProcess task)
+    void finish(JobProcess task, bool ok)
+    void start(JobProcess task)
+    bool stdout(string build, string message)
+    bool stderr(string build, string message)
+}

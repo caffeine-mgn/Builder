@@ -17,11 +17,20 @@ sealed class JobEntity(val path: String) {
                 path.substring(p)
         }
 
-    suspend fun write(appendable: AsyncAppendable) {
-        jsonNode(appendable) {
-            write(this)
-        }
-    }
+//    suspend fun write(appendable: AsyncAppendable) {
+//        jsonNode(appendable) {
+//            write(this)
+//        }
+//    }
+
+    suspend fun write(): JsonNode =
+            jsonNode {
+                string("path", path)
+                when (this@JobEntity) {
+                    is Job -> string("type", "job")
+                    is Folder -> string("type", "folder")
+                }
+            }
 
     suspend fun write(ctx: ObjectCtx) {
         ctx.run {
@@ -41,8 +50,8 @@ sealed class JobEntity(val path: String) {
         }
 
         fun read(node: JsonNode): JobEntity {
-            val path = node.obj["path"]!!.text
-            val type = node.obj["type"]!!.text
+            val path = node.obj["path"]!!.string
+            val type = node.obj["type"]!!.string
             return when (type) {
                 "job" -> Job(path)
                 "folder" -> Folder(path)

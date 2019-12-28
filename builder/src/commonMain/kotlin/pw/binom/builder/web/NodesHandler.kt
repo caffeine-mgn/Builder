@@ -1,8 +1,9 @@
-package pw.binom.builder.server
+package pw.binom.builder.web
 
+import pw.binom.builder.server.*
 import pw.binom.io.utf8Appendable
 import pw.binom.json.jsonArray
-
+/*
 class NodesHandler(private val executionControl: ExecutionControl) : PathHandler() {
     init {
         filter(method("GET") + equal("/status")) { r, q ->
@@ -19,3 +20,4 @@ class NodesHandler(private val executionControl: ExecutionControl) : PathHandler
         }
     }
 }
+*/

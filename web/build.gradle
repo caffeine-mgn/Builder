@@ -1,0 +1,47 @@
+apply from: '../resourceGeneratorTask.gradle'
+/*
+class GreetingPlugin implements Plugin<Project> {
+    void apply(Project project) {
+        project.task('generate') {
+            doLast {
+                println 'Hello from the GreetingPlugin'
+            }
+        }
+    }
+}
+*/
+
+task gen(type: ext.ResourceSourceGenerator) {
+    addFile(file("src/images/add.svg"))
+    packageName = "pw.binom.res"
+    objectName = "Res"
+    destination = file("build/gen/source/res.kt")
+}
+apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.kotlin.multiplatform'
+apply plugin: 'kotlin-dce-js'
+kotlin {
+    js()
+
+    sourceSets {
+
+        jsMain {
+            dependencies {
+                api "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+                api "org.tlsys:css:$css_version"
+                api project(":common")
+            }
+            kotlin.srcDir('build/gen/source')
+        }
+    }
+}
+/*
+task generateJsSource(type: ResourceSourceGenerator){
+    dependsOn compileKotlinJs
+    destination=file("src/build/gen/server/resources.tk")
+    packageName="pw.binom.builder"
+    objectName="Resources"
+
+    addFile(file("build/"))
+}
+*/

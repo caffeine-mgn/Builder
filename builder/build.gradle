@@ -1,5 +1,6 @@
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
+apply from: '../resourceGeneratorTask.gradle'
 kotlin {
     def nativeEntryPoint = 'pw.binom.builder.main'
     linuxX64 { // Use your target instead.
@@ -81,8 +82,12 @@ kotlin {
                 api "pw.binom.io:file:$network_version"
                 api "pw.binom.io:json:$network_version"
                 api "pw.binom.io:job:$network_version"
+                api "pw.binom.io:thread:$network_version"
                 api "pw.binom.io:logger:$network_version"
+                api project(":common")
             }
+
+            kotlin.srcDir('build/gen/server')
         }
 
         commonTest {
@@ -95,8 +100,6 @@ kotlin {
         nativeMain {
             dependencies {
                 dependsOn commonMain
-
-
             }
         }
 
@@ -111,7 +114,6 @@ kotlin {
                 dependsOn mingwX64Main
             }
         }
-
 
         linuxX64Main {
             dependencies {
@@ -138,36 +140,49 @@ kotlin {
         }
     }
 }
-/*
 
-task generateJsSource(type: ResourceSourceGenerator){
-    dependsOn compileKotlinJs
-    destination=file("src/build/gen/server/resources.tk")
-    packageName="pw.binom.builder"
-    objectName="Resources"
+task generateJsSource(type: ResourceSourceGenerator) {
+    dependsOn ":web:runDceJsKotlin"
+    destination = file("${project.buildFile.parentFile}/build/gen/server/resources.kt")
+    packageName = "pw.binom.builder"
+    objectName = "Resources"
+
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/kotlin.js"), "kotlin_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/common.js"), "common_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/json.js"), "json_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/rpcJson.js"), "rpcJson_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/krpc.js"), "rpc_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/core.js"), "core_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/web.js"), "web_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/org.tlsys.css.js"), "css_js")
+    addFile(file("src/commonMain/resources/ace.js"))
+    addFile(file("src/commonMain/resources/tomorrow_night.js"))
+    addFile(file("src/commonMain/resources/mode-sh.js"))
 }
 
 
-compileKotlinJvm{
+
+
+compileKotlinJvm {
     dependsOn generateJsSource
 }
 
-compileKotlinLinuxArm32Hfp{
+linkReleaseExecutableLinuxArm32Hfp {
     dependsOn generateJsSource
 }
 
-compileKotlinLinuxX64{
+linkReleaseExecutableLinuxX64 {
     dependsOn generateJsSource
 }
 
-compileKotlinMingwX64{
+linkReleaseExecutableMingwX64 {
     dependsOn generateJsSource
 }
 
-compileKotlinMingwX86{
+linkReleaseExecutableMingwX86 {
     dependsOn generateJsSource
 }
-*/
+
 jvmJar {
     with {
         from {
@@ -184,6 +199,8 @@ jvmJar {
         attributes 'Main-Class': "pw.binom.builder.MainKt"
     }
 }
+
+
 task runMainExecutableJvm(dependsOn: jvmJar, group: "run") {
 
     doLast {

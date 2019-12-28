@@ -4,7 +4,7 @@ import pw.binom.Platform
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
 import pw.binom.json.*
-
+/*
 class JobDescription(val buildNumber: Long, val path: String, val cmd: String, val env: Map<String, String>, val platform: Platform?) {
 
     suspend fun write(appendable: AsyncAppendable) {
@@ -34,11 +34,12 @@ class JobDescription(val buildNumber: Long, val path: String, val cmd: String, v
             val path = r.node.obj["path"]!!.text
             val cmd = r.node.obj["cmd"]!!.text
             val env = HashMap<String, String>()
-            val platform = r.node.obj["platform"]?.takeIf { !it.isNull }?.let { Platform.valueOf(it.text) }
+            val platform = r.node.obj["platform"]?.let { Platform.valueOf(it.text) }
             r.node.obj["env"]?.obj?.forEach {
-                env[it.key] = it.value.text
+                env[it.key] = it.value!!.text
             }
             return JobDescription(buildNumber = buildNumber, path = path, cmd = cmd, env = env, platform = platform)
         }
     }
 }
+*/

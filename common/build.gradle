@@ -1,0 +1,65 @@
+apply from: '../resourceGeneratorTask.gradle'
+
+
+task gen(type: ext.ResourceSourceGenerator) {
+    addFile(file("src/images/add.svg"))
+    packageName = "pw.binom.res"
+    objectName = "Res"
+    destination = file("build/gen/source/res.kt")
+}
+apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.kotlin.multiplatform'
+kotlin {
+    js()
+    linuxX64()
+    linuxArm32Hfp()
+    mingwX64()
+    mingwX86()
+    jvm()
+
+    sourceSets {
+
+        commonMain {
+            dependencies {
+                api "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+                api "pw.binom.io:core:$network_version"
+                api "pw.binom.io:json:$network_version"
+                api "pw.binom.io:rpcJson:$network_version"
+                api "pw.binom.io:krpc:$network_version"
+            }
+
+            kotlin.srcDir('build/gen/server')
+            kotlin.srcDir('build/dtogen')
+        }
+    }
+}
+
+task generateDTO(type: pw.binom.krpc.KRpcKotlin) {
+    outputDtoList = "pw.binom.builder.remote.DTO_LIST"
+    destination = file("${buildDir}/dtogen")
+    from(fileTree("src/commonMain/proto"))
+}
+
+compileKotlinJs {
+    dependsOn generateDTO
+}
+
+compileKotlinJvm {
+    dependsOn generateDTO
+}
+
+compileKotlinLinuxArm32Hfp {
+    dependsOn generateDTO
+}
+
+compileKotlinLinuxX64 {
+    dependsOn generateDTO
+}
+
+compileKotlinMingwX64 {
+    dependsOn generateDTO
+}
+
+compileKotlinMingwX86 {
+    dependsOn generateDTO
+}

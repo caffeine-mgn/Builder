@@ -3,10 +3,14 @@ package pw.binom.builder.server
 import pw.binom.Date
 import pw.binom.PopResult
 import pw.binom.Stack
+import pw.binom.builder.Topic
+import pw.binom.builder.remote.JobStatusType
+import pw.binom.builder.web.RootHandler
 import pw.binom.io.Closeable
 import pw.binom.io.file.File
 import pw.binom.io.httpServer.HttpServer
 import pw.binom.io.socket.ConnectionManager
+import pw.binom.krpc.Struct
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -48,17 +52,9 @@ enum class Output {
     STDERR
 }
 
-class Status(val type: Type, val time: Long) {
+class Status(val type: JobStatusType, val time: Long) {
     val date: Date
         get() = Date(time)
-
-    enum class Type {
-        PREPARE,
-        PROCESS,
-        FINISHED_OK,
-        FINISHED_ERROR,
-        CANCELED
-    }
 }
 
 class AsyncStack<T> : Closeable {
@@ -97,18 +93,27 @@ class AsyncStack<T> : Closeable {
     }
 }
 
-class Server(val jobsPath: File, val bind: List<Pair<String, Int>>) {
+class Server(val jobsPath: File, val bind: List<Pair<String, Int>>,val rootUri:String) {
     val taskManager = TaskManager(jobsPath)
-    val executionControl = ExecutionControl(taskManager)
-    val executeScheduler = ExecuteScheduler()
+    val eventTopic = Topic<Struct>()
+    val processService = ProcessServiceImpl(taskManager, eventTopic)
+    val taskManagerService = TaskManagerServiceImpl(taskManager)
+    val nodesService = NodesServiceImpl(eventTopic, processService)
+
     fun start() {
         val manager = ConnectionManager()
         val server = HttpServer(
                 manager = manager,
                 handler = RootHandler(
                         taskManager = taskManager,
-                        executeScheduler = executeScheduler,
-                        executionControl = executionControl
+                        process = processService,
+                        taskManagerService = taskManagerService,
+                        eventTopic = eventTopic,
+                        nodesService = nodesService,
+                        rootUri = rootUri
+//                        executeScheduler = executeScheduler,
+//                        executionControl = executionControl,
+//                        eventTopic = eventTopic
                 )
         )
         bind.forEach {
@@ -116,7 +121,8 @@ class Server(val jobsPath: File, val bind: List<Pair<String, Int>>) {
         }
 
         while (true) {
-            executeScheduler.update()
+            nodesService.update()
+//            executeScheduler.update()
             manager.update(1000)
         }
     }

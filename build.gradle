@@ -1,6 +1,7 @@
 buildscript {
-    ext.kotlin_version = "1.3.40"
-    ext.network_version = "0.1.3"
+    ext.kotlin_version = "1.3.50"
+    ext.network_version = "0.1.8"
+    ext.css_version = "1.0.4"
 
     repositories {
         mavenCentral()
@@ -9,11 +10,21 @@ buildscript {
         maven {
             url 'https://plugins.gradle.org/m2/'
         }
+        maven {
+            url "http://repo.binom.pw/releases"
+        }
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "pw.binom.io:krpcPlugin:$network_version"
     }
 }
+
+def repoUser = System.getenv("REPO_USER")
+def repoPassword = System.getenv("REPO_PASSWORD")
+
+println("repoUser=$repoUser")
+println("repoPassword=$repoPassword")
 
 allprojects {
     version = network_version
@@ -24,7 +35,7 @@ allprojects {
         jcenter()
         mavenLocal()
         maven {
-            url "http://repo.tlsys.su/maven/releases"
+            url "http://repo.binom.pw/releases"
         }
     }
 }

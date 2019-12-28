@@ -1,5 +1,5 @@
 package pw.binom.builder.common
-
+/*
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
 import pw.binom.json.*
@@ -29,7 +29,7 @@ class NodeStatus(val node: NodeInfo, val job: ExecuteJob?) {
     companion object {
         fun read(node: JsonNode): NodeStatus {
             val nodeInfo = NodeInfo.read(node.obj["node"]!!)
-            val job = node.obj["job"]?.takeIf { !it.isNull }?.let { ExecuteJob.read(it) }
+            val job = node.obj["job"]?.let { ExecuteJob.read(it) }
             return NodeStatus(
                     node = nodeInfo,
                     job = job
@@ -42,3 +42,4 @@ class NodeStatus(val node: NodeInfo, val job: ExecuteJob?) {
         }
     }
 }
+*/

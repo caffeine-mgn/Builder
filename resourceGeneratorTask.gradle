@@ -1,0 +1,63 @@
+class ResourceSourceGenerator extends DefaultTask {
+
+    @OutputFile
+    File destination
+
+    @Input
+    @Option(option = "packageName", description = "")
+    String packageName
+
+    @Input
+    @Option(option = "objectName", description = "")
+    String objectName
+
+    private HashMap<String, File> files = new HashMap<>()
+
+    def addFile(File file, String name = file.name.replace('.', '_').replace('-','_')) {
+        this.inputs.file(file)
+        files[name] = file
+    }
+
+    File getDestination() {
+        project.file(destination)
+    }
+
+    @TaskAction
+    def action() {
+        if (destination == null || destination.exists() && !destination.isFile())
+            throw new TaskExecutionException("Invalid destination file \"$destination\"")
+        destination.parentFile.mkdirs()
+        destination.delete()
+        destination.append("package $packageName\n")
+        if (objectName != null)
+            destination.append("object $objectName {\n")
+        files.entrySet().forEach {
+            if (objectName != null)
+                destination.append("    ")
+
+            def str = Base64.encoder.encodeToString(it.value.getBytes())
+            def maxLen = (int) (10_000)
+            if (str.length() > maxLen) {
+                def count = 0
+                destination.append("val ${it.key} = arrayOf(")
+
+                while (str.length() > 0) {
+                    if (count > 0)
+                        destination.append(",\n")
+                    destination.append("\"${str.substring(0, Math.min(str.length(), maxLen))}\"")
+                    count++
+                    if (str.length() < maxLen)
+                        str = ""
+                    else
+                        str = str.substring(maxLen)
+                }
+                destination.append(")\n")
+            } else
+                destination.append("val ${it.key} = arrayOf(\"${str}\")\n")
+        }
+        if (objectName != null)
+            destination.append("}")
+    }
+}
+
+ext.ResourceSourceGenerator = ResourceSourceGenerator

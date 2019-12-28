@@ -1,10 +1,13 @@
-package pw.binom.builder.server
-
+package pw.binom.builder.web
+/*
 import pw.binom.builder.OutType
 import pw.binom.builder.common.ExecuteJob
 import pw.binom.builder.common.JobStatus
+import pw.binom.builder.decodeUrl
+import pw.binom.builder.server.*
 import pw.binom.io.*
 import pw.binom.io.httpServer.HttpRequest
+import pw.binom.io.httpServer.HttpResponse
 import pw.binom.json.jsonArray
 import pw.binom.logger.Logger
 import pw.binom.logger.info
@@ -17,14 +20,26 @@ class ExecutionControlHandler(
 ) : PathHandler() {
     private val LOG = Logger.getLog("/execution")
 
+    override suspend fun request(req: HttpRequest, resp: HttpResponse) {
+        LOG.info("Request ${req.contextUri} ${req.method}")
+        super.request(req, resp)
+    }
+
     init {
-        fun readExecuteJob(req: HttpRequest): ExecuteJob {
-            val items = req.contextUri.removePrefix("/").split('/')
-            return ExecuteJob(buildNumber = items[1].toLong(), path = items[0])
+        fun readExecuteJob(req: HttpRequest): ExecuteJob? {
+            val path = req.contextUriWithoutParams.decodeUrl().removePrefix("/")
+            val p = path.lastIndexOf('/')
+            val buildNumber = path.substring(p + 1).toLongOrNull() ?: return null
+            val task = path.substring(0, p)
+//            val items = req.contextUriWithoutParams.removePrefix("/").split('/')
+//            if (items.size!=2)
+//                return null
+//            val buildNumber = items[1].toLongOrNull()?:return null
+            return ExecuteJob(buildNumber = buildNumber, path = task)
         }
 
         fun getExecution(req: HttpRequest): ExecutionControl.Execution? {
-            return executionControl.getExecution(readExecuteJob(req))
+            return executionControl.getExecution(readExecuteJob(req) ?: return null)
         }
 
         filter(method("POST") + endsWith("/stdout")) { r, q ->
@@ -52,24 +67,26 @@ class ExecutionControlHandler(
                 e.addActionCancel()
                 return@filter
             }
-            if (executeScheduler.cancel(readExecuteJob(r))) {
+            val ee = readExecuteJob(r)
+            if (ee == null) {
+                q.status = 400
+                return@filter
+            }
+            if (executeScheduler.cancel(ee)) {
                 q.status = 200
             }
         }
 
         filter(method("GET") + endsWith("/actions")) { r, q ->
             val e = getExecution(r) ?: return@filter
-            var count = 0
             q.status = 200
             jsonArray(q.output.utf8Appendable()) {
                 while (!e.actions.isEmpty) {
                     node {
                         e.actions.pop().write(this)
-                        count++
                     }
                 }
             }
-            println("Return events: $count")
             q.output.flush()
         }
 
@@ -98,34 +115,39 @@ class ExecutionControlHandler(
             jsonArray(q.output.utf8Appendable()) {
                 executionControl.executions.forEach {
                     node {
-                        JobStatus(job = it.execution, node = it.node).write(this)
+                        JobStatus(job = it.execution, node = it.node, start = it.startTime, end = null, status = null).write(this)
                     }
                 }
 
                 executeScheduler.tasks.forEach {
                     node {
-                        JobStatus(job = it.toExecuteJob(), node = null).write(this)
+                        JobStatus(job = it.toExecuteJob(), node = null, start = null, end = null, status = null).write(this)
                     }
                 }
             }
         }
 
         filter(method("GET") + endsWith("/tail")) { r, q ->
-            val e = getExecution(r)
-
-            if (e == null) {
-                val jobDescription = readExecuteJob(r)
-                val job = taskManager.getJob(jobDescription.path)
-                if (job == null)
-                    LOG.warn("Job ${r.contextUri} not found")
-                else {
-                    LOG.info("Work was done!")
-                    if (job.getStarted(jobDescription.buildNumber) != null)
-                        q.status = 200
-                    else
-                        q.status = 404
-                }
+            val exe = readExecuteJob(r)
+            if (exe == null) {
+                q.status = 400
                 return@filter
+            }
+            var e = executionControl.getExecution(exe)
+            if (e == null) {
+                val job = taskManager.getJob(exe.path)
+                if (job == null) {
+                    LOG.warn("Job ${r.contextUri.decodeUrl()} not found")
+                    return@filter
+                } else {
+                    if (executeScheduler.isScheduled(exe)) {
+                        e = executionControl.waitExecute(exe)
+                    } else {
+                        q.status = 404
+                        return@filter
+                    }
+
+                }
             }
             q.status = 200
             val appendable = q.output.utf8Appendable()
@@ -149,3 +171,4 @@ class ExecutionControlHandler(
         }
     }
 }
+ */

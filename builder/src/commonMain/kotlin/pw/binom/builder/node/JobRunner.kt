@@ -1,43 +1,57 @@
 package pw.binom.builder.node
 
-import pw.binom.*
+import pw.binom.Environment
 import pw.binom.builder.OutType
-import pw.binom.builder.common.Action
-import pw.binom.builder.common.JobDescription
-import pw.binom.io.ByteArrayOutputStream
+import pw.binom.builder.client.Client
+import pw.binom.builder.remote.BuildDescription
+import pw.binom.builder.remote.asShort
+import pw.binom.builder.remote.toProcess
+import pw.binom.getEnvs
 import pw.binom.io.file.File
 import pw.binom.io.file.FileOutputStream
-import pw.binom.io.http.Headers
-import pw.binom.io.httpClient.AsyncHttpClient
 import pw.binom.io.use
 import pw.binom.io.utf8Appendable
 import pw.binom.job.Worker
 import pw.binom.job.execute
+import pw.binom.logger.Logger
+import pw.binom.logger.info
+import pw.binom.popOrNull
 import pw.binom.process.Process
 import pw.binom.process.execute
+import pw.binom.stackTrace
+import pw.binom.thread.FreezedStack
+import pw.binom.thread.Thread
+import kotlin.collections.set
 
-class JobRunner(url: String, val dir: File, val bashPath: File, val job: JobDescription, val client: AsyncHttpClient, val envs: Map<String, String>) {
+class JobRunner(url: String,
+                val dir: File,
+                val bashPath: File,
+                val job: BuildDescription,
+                val client: Client,
+                val envs: Map<String, String>,
+                val passThread: PassThread) {
     val url = url.removeSuffix("/")
     val out = FreezedStack<Out>().asFiFoQueue()
-    private var events: JobActionListener? = null
+    //    private var events: JobActionListener? = null
     private var cancelled = false
+    private val log = Logger.getLog("Runner ${job.toProcess().asShort}")
 
-    private fun actionProcess() {
-        val events = events!!.actions
-        while (!events.isEmpty) {
-            val event = events.pop()
-            println("Catch event ${event}")
-            when (event) {
-                is Action.Cancel -> cancelled = true
-            }
-        }
-    }
+//    private fun actionProcess() {
+//        val events = events!!.actions
+//        while (!events.isEmpty) {
+//            val event = events.pop()
+//            when (event) {
+//                is ActionCancel -> cancelled = true
+//            }
+//        }
+//    }
 
     suspend fun build() {
-        events = JobActionListener(
-                url = URL(url),
-                job = job.toExecuteJob()
-        )
+        log.info("Start Building...")
+//        events = JobActionListener(
+//                url = URL(url),
+//                job = job.toProcess()
+//        )
         try {
             val scriptFile = File(dir, "script.sh")
             FileOutputStream(scriptFile).use {
@@ -46,7 +60,8 @@ class JobRunner(url: String, val dir: File, val bashPath: File, val job: JobDesc
             val env = HashMap(Environment.getEnvs())
             env.putAll(this.envs)
             env["BUILD_NUMBER"] = job.buildNumber.toString()
-            env.putAll(job.env)
+            env.putAll(job.env.associate { it.name to it.value })
+            client.processService.start(job.toProcess())
             val process = Process.execute(
                     path = bashPath.path,
                     workDir = dir.path,
@@ -64,9 +79,14 @@ class JobRunner(url: String, val dir: File, val bashPath: File, val job: JobDesc
             var stderrDone = false
 
             while (true) {
+                if (passThread.canceled) {
+                    log.info("Cancel by passThread")
+                    cancelled = true
+                }
                 try {
-                    actionProcess()
+//                    actionProcess()
                     if (cancelled) {
+                        log.info("Task Cancelled")
                         stdout.interrupt()
                         stderr.interrupt()
                         stderrDone = true
@@ -80,7 +100,7 @@ class JobRunner(url: String, val dir: File, val bashPath: File, val job: JobDesc
                     }
                     val o = out.popOrNull()
                     if (o == null) {
-                        Thread.sleep(1)
+                        Thread.sleep(1000)
                         continue
                     }
                     if (o.value == null) {
@@ -89,10 +109,12 @@ class JobRunner(url: String, val dir: File, val bashPath: File, val job: JobDesc
                             OutType.STDERR -> stderrDone = true
                         }
                     } else {
-                        sendOut(o)
+                        if (!sendOut(o))
+                            cancelled = true
                     }
                 } catch (e: Throwable) {
                     println("JobRunner::build::loop error: $e")
+                    e.stackTrace
                 }
             }
             stdout.interrupt()
@@ -106,37 +128,24 @@ class JobRunner(url: String, val dir: File, val bashPath: File, val job: JobDesc
             println("Error build ${job.path}:${job.buildNumber}   $e")
             sendFinish(false)
         }
-        events?.close()
+//        events?.close()
     }
 
     private suspend fun sendCancel() {
-        client.request(method = "POST", url = URL("$url/execution/${job.path.removePrefix("/")}/${job.buildNumber}/cancel"))
-                .close()
+        client.processService.cancelled(job.toProcess())
     }
 
     private suspend fun sendFinish(ok: Boolean) {
-        client.request(method = "POST", url = URL("$url/execution/${job.path.removePrefix("/")}/${job.buildNumber}/finish")).use {
-            val txt = if (ok) "true" else "false"
-            it.addRequestHeader(Headers.CONTENT_LENGTH, txt.length.toString())
-            it.outputStream.utf8Appendable().append(txt)
-            it.outputStream.flush()
-        }
+        client.processService.finish(job.toProcess(), ok)
     }
 
-    private suspend fun sendOut(out: Out) {
-        val e = when (out.type) {
-            OutType.STDOUT -> "stdout"
-            OutType.STDERR -> "stderr"
-        }
-        client.request(method = "POST", url = URL("$url/execution/${job.path.removePrefix("/")}/${job.buildNumber}/$e")).use { req ->
-            ByteArrayOutputStream().use { b ->
-                b.utf8Appendable().append(out.value)
-                b.flush()
-                val data = b.toByteArray()
-                req.addRequestHeader(Headers.CONTENT_LENGTH, data.size.toString())
-                req.outputStream.write(data)
-                req.outputStream.flush()
+    private suspend fun sendOut(out: Out): Boolean {
+        if (out.value != null)
+            return when (out.type) {
+                OutType.STDOUT -> client.processService.stdout("${job.path}:${job.buildNumber}", out.value)
+                OutType.STDERR -> client.processService.stderr("${job.path}:${job.buildNumber}", out.value)
             }
-        }
+
+        return true
     }
 }

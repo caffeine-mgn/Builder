@@ -3,7 +3,7 @@ package pw.binom.builder.common
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
 import pw.binom.json.*
-
+/*
 data class ExecuteJob(val buildNumber: Long, val path: String) {
 
     suspend fun write(ctx: ObjectCtx) {
@@ -13,11 +13,18 @@ data class ExecuteJob(val buildNumber: Long, val path: String) {
         }
     }
 
+    suspend fun write() =
+            jsonNode {
+                number("buildNumber", buildNumber)
+                string("path", path)
+            }
+
     suspend fun write(appendable: AsyncAppendable) {
         jsonNode(appendable) {
             write(this)
         }
     }
+
 
     override fun toString(): String =
             "$path:$buildNumber"
@@ -36,3 +43,5 @@ data class ExecuteJob(val buildNumber: Long, val path: String) {
         }
     }
 }
+
+ */

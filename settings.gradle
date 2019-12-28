@@ -10,4 +10,5 @@ enableFeaturePreview('GRADLE_METADATA')
 rootProject.name = 'Builder'
 
 include(":builder")
-//include(":web")
+include(":web")
+include(":common")

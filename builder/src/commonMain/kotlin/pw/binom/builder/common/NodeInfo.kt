@@ -1,5 +1,5 @@
 package pw.binom.builder.common
-
+/*
 import pw.binom.Platform
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
@@ -49,3 +49,4 @@ class NodeInfo(val id: String, val platform: Platform, val dataCenter: String) {
         }
     }
 }
+*/

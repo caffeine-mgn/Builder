@@ -1,5 +1,6 @@
 package pw.binom.builder.server
 
+import pw.binom.io.UTF8
 import pw.binom.io.httpServer.Handler
 import pw.binom.io.httpServer.HttpRequest
 import pw.binom.io.httpServer.HttpResponse
@@ -8,11 +9,15 @@ import pw.binom.io.httpServer.withContextURI
 open class PathHandler : Handler {
     override suspend fun request(req: HttpRequest, resp: HttpResponse) {
         try {
-            for (i in filters.size - 1 downTo 0) {
-                val item = filters[i]
-                val rr = item.first.request(req) ?: continue
-                item.second(rr, resp)
-                return
+            try {
+                for (i in filters.size - 1 downTo 0) {
+                    val item = filters[i]
+                    val rr = item.first.request(req) ?: continue
+                    item.second(rr, resp)
+                    return
+                }
+            } catch (e: Throwable) {
+                exceptionHander(e, req, resp)
             }
 
             resp.status = 404
@@ -20,6 +25,10 @@ open class PathHandler : Handler {
             resp.status = 500
             throw e
         }
+    }
+
+    protected suspend open fun exceptionHander(exception: Throwable, req: HttpRequest, resp: HttpResponse) {
+        resp.status = 500
     }
 
     fun filter(filter: PathFilter, handler: Handler) {
@@ -37,19 +46,51 @@ interface PathFilter {
     fun request(req: HttpRequest): HttpRequest?
 }
 
+val HttpRequest.contextUriWithoutParams: String
+    get() {
+        val p = contextUri.indexOf('?')
+        return if (p == -1)
+            contextUri
+        else
+            contextUri.substring(0, p)
+    }
+
+val HttpRequest.params: Map<String, String?>
+    get() {
+        val p = contextUri.indexOf('?')
+        return if (p == -1)
+            emptyMap()
+        else
+            contextUri.substring(p + 1)
+                    .splitToSequence('&')
+                    .map {
+                        val items = it.split('=')
+                        items[0] to items.getOrNull(1)?.let { UTF8.urlDecode(it) }
+                    }.toMap()
+    }
+
+private fun Map<String, String?>.asParamsURI(): String {
+    return if (isEmpty())
+        ""
+    else
+        "?" + asSequence().map {
+            if (it.value == null) it.key else "${it.key}=${UTF8.urlEncode(it.value!!)}"
+        }.joinToString("&")
+}
+
 fun endsWith(uri: String) = object : PathFilter {
     override fun request(req: HttpRequest): HttpRequest? {
-        if (!req.contextUri.endsWith(uri))
+        if (!req.contextUriWithoutParams.endsWith(uri))
             return null
-        return req.withContextURI(req.contextUri.removeSuffix(uri))
+        return req.withContextURI(req.contextUriWithoutParams.removeSuffix(uri) + req.params.asParamsURI())
     }
 }
 
 fun equal(uri: String) = object : PathFilter {
     override fun request(req: HttpRequest): HttpRequest? {
-        if (req.contextUri != uri)
+        if (req.contextUriWithoutParams != uri)
             return null
-        return req.withContextURI("")
+        return req.withContextURI("" + req.params.asParamsURI())
     }
 }
 
