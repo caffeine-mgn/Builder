@@ -1,9 +1,9 @@
 package pw.binom.builder.common
-
+/*
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
 import pw.binom.json.*
-/*
+
 data class ExecuteJob(val buildNumber: Long, val path: String) {
 
     suspend fun write(ctx: ObjectCtx) {

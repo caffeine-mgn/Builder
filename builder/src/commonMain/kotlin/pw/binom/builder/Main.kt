@@ -2,21 +2,20 @@ package pw.binom.builder
 
 import pw.binom.Environment
 import pw.binom.URL
+import pw.binom.builder.cli.CmdRunner
 import pw.binom.builder.client.Client
-import pw.binom.builder.common.JobEntity
-import pw.binom.builder.node.Node
 import pw.binom.builder.remote.JobProcess
 import pw.binom.builder.server.Server
 import pw.binom.getEnv
 import pw.binom.io.httpClient.AsyncHttpClient
-import pw.binom.io.socket.ConnectionManager
+import pw.binom.io.socket.nio.SocketNIOManager
 
 fun main(args: Array<String>) {
     execute(args, CmdRunner())
 }
 
 abstract class NetTask : Function() {
-    protected val manager = ConnectionManager()
+    protected val manager = SocketNIOManager()
     private val httpClient = AsyncHttpClient(manager)
     protected abstract val url: URL
     protected val client by lazy { Client(url, httpClient) }
@@ -47,68 +46,6 @@ class RunServer : Function() {
     }
 }
 
-class RunNode : Function() {
-    override val description: String?
-        get() = "Starts Build Node"
-    val envs by paramList("env").convert {
-        it.asSequence().map {
-            val item = it.split('=', limit = 2)
-            item[0] to item[1]
-        }.toMap()
-    }
-    val tags by paramList("tag")
-
-    private val bashPath by param("bash-path", "Path to Bash. For example, on linux using \"/bin/bash\". On Windows use cygwin")
-            .require()
-            .file()
-            .fileExist()
-
-    private val buildPath by param("build-path")
-            .default { Environment.getEnv(SERVER_ADDR) }
-            .require()
-            .file()
-            .dirExist()
-
-    private val serverUrl by param("server")
-            .require()
-            .url()
-
-    private val id by param("id")
-            .require()
-            .notBlank()
-
-    private val dataCenter by param("dc")
-            .require()
-            .notBlank()
-
-    override fun execute(): Result = action {
-        Node(
-                bashPath = bashPath,
-                buildPath = buildPath,
-                url = serverUrl.toString(),
-                id = id,
-                dataCenter = dataCenter,
-                envs = envs
-        ).start()
-    }
-}
-
-class CmdRunner : Function() {
-    override val description: String?
-        get() = "Starter"
-
-    override fun execute(): Result =
-            dir(
-                    "server" to RunServer(),
-                    "node" to RunNode(),
-                    "start" to StartJob(),
-//                    "nodes" to NodesCmd(),
-//                    "tail" to TailCmd(),
-                    "cancel" to CancelCmd()
-//                    "executes" to ExecutesCmd(),
-//                    "tasks" to TasksJob()
-            )
-}
 /*
 class TasksJob : NetTask() {
     override val description: String?

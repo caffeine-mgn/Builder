@@ -6,10 +6,12 @@ import pw.binom.Stack
 import pw.binom.builder.Topic
 import pw.binom.builder.remote.JobStatusType
 import pw.binom.builder.web.RootHandler
+import pw.binom.date.Date
 import pw.binom.io.Closeable
 import pw.binom.io.file.File
 import pw.binom.io.httpServer.HttpServer
 import pw.binom.io.socket.ConnectionManager
+import pw.binom.io.socket.nio.SocketNIOManager
 import pw.binom.krpc.Struct
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -94,14 +96,14 @@ class AsyncStack<T> : Closeable {
 }
 
 class Server(val jobsPath: File, val bind: List<Pair<String, Int>>,val rootUri:String) {
-    val taskManager = TaskManager(jobsPath)
+    val taskManager = TaskManager1(jobsPath)
     val eventTopic = Topic<Struct>()
     val processService = ProcessServiceImpl(taskManager, eventTopic)
     val taskManagerService = TaskManagerServiceImpl(taskManager)
     val nodesService = NodesServiceImpl(eventTopic, processService)
 
     fun start() {
-        val manager = ConnectionManager()
+        val manager = SocketNIOManager()
         val server = HttpServer(
                 manager = manager,
                 handler = RootHandler(

@@ -3,10 +3,10 @@ package pw.binom.builder
 import pw.binom.async
 import pw.binom.atomic.AtomicBoolean
 import pw.binom.atomic.AtomicReference
-import pw.binom.io.socket.ConnectionManager
+import pw.binom.io.socket.nio.SocketNIOManager
 import pw.binom.thread.Thread
 
-fun <T> ConnectionManager.sync(func: suspend () -> T): T {
+fun <T> SocketNIOManager.sync(func: suspend () -> T): T {
     val done = AtomicBoolean(false)
     val result = AtomicReference<T>(null as T)
     async {

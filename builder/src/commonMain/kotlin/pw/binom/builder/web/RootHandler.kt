@@ -3,18 +3,16 @@ package pw.binom.builder.web
 import pw.binom.URL
 import pw.binom.builder.Topic
 import pw.binom.builder.remote.NodesServiceAsync
-import pw.binom.builder.remote.ProcessServiceAsync
 import pw.binom.builder.remote.TaskManagerServiceAsync
 import pw.binom.builder.server.*
 import pw.binom.io.httpServer.HttpRequest
 import pw.binom.io.httpServer.HttpResponse
 import pw.binom.krpc.Struct
 import pw.binom.logger.Logger
-import pw.binom.logger.info
 import pw.binom.logger.warn
 
 class RootHandler(
-        taskManager: TaskManager,
+        taskManager: TaskManager1,
         process: ProcessServiceImpl,
         taskManagerService: TaskManagerServiceAsync,
         eventTopic: Topic<Struct>,

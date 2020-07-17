@@ -1,7 +1,7 @@
 package pw.binom.builder.common
-
-import pw.binom.json.ObjectCtx
 /*
+import pw.binom.json.ObjectCtx
+
 /**
  * Contains last lines of output logs and number of bytes before [text]
  * @param text last line of logs

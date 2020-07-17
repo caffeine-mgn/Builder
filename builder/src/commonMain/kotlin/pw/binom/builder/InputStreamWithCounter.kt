@@ -1,11 +1,12 @@
 package pw.binom.builder
 
-import pw.binom.io.InputStream
+import pw.binom.ByteBuffer
+import pw.binom.Input
 
 /**
  * Stream for read counter
  */
-class InputStreamWithCounter(val stream: InputStream) : InputStream {
+class InputStreamWithCounter(val stream: Input) : Input {
     private var _counter = 0L
 
     /**
@@ -14,25 +15,16 @@ class InputStreamWithCounter(val stream: InputStream) : InputStream {
     val counter
         get() = _counter
 
-    override fun skip(length: Long): Long {
-        val r = stream.skip(length)
-        _counter += r
-        return r
-    }
-
-    override val available: Int
-        get() = super.available
-
     override fun close() {
         stream.close()
     }
 
-    override fun read(data: ByteArray, offset: Int, length: Int): Int {
-        val r = stream.read(data, offset, length)
-        if (r > 0)
-            _counter += r
-        return r
+    override fun read(dest: ByteBuffer): Int {
+        val l = stream.read(dest)
+        if (l>0)
+            _counter+=l
+        return l
     }
 }
 
-fun InputStream.withCounter() = InputStreamWithCounter(this)
+fun Input.withCounter() = InputStreamWithCounter(this)

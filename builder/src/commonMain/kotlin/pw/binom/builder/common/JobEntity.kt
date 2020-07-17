@@ -1,5 +1,5 @@
 package pw.binom.builder.common
-
+/*
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
 import pw.binom.json.*
@@ -60,3 +60,4 @@ sealed class JobEntity(val path: String) {
         }
     }
 }
+*/

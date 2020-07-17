@@ -1,18 +1,18 @@
 package pw.binom.builder.node
 
 import pw.binom.AppendableQueue
+import pw.binom.Input
 import pw.binom.builder.OutType
 import pw.binom.io.EOFException
-import pw.binom.io.InputStream
 import pw.binom.io.Reader
 import pw.binom.io.utf8Reader
-import pw.binom.job.Task
+import pw.binom.thread.Thread
 
 class Out(val value: String?, val type: OutType)
 
-class ThreadReader(inputStream: InputStream, val type: OutType, val out: AppendableQueue<Out>) : Task() {
+class ThreadReader(inputStream: Input, val type: OutType, val out: AppendableQueue<Out>) : Thread() {
     private val streamReader = inputStream.utf8Reader()
-    override fun execute() {
+    override fun run() {
         while (!isInterrupted) {
             try {
                 val l = streamReader.readln1()

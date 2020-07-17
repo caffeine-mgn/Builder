@@ -9,6 +9,7 @@ task gen(type: ext.ResourceSourceGenerator) {
 }
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
+apply plugin: 'kotlinx-serialization'
 kotlin {
     js()
     linuxX64()
@@ -23,17 +24,68 @@ kotlin {
             dependencies {
                 api "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
                 api "pw.binom.io:core:$network_version"
-                api "pw.binom.io:json:$network_version"
-                api "pw.binom.io:rpcJson:$network_version"
-                api "pw.binom.io:krpc:$network_version"
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
             }
 
             kotlin.srcDir('build/gen/server')
             kotlin.srcDir('build/dtogen')
         }
+
+        nativeMain {
+            dependencies {
+                dependsOn commonMain
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serialization_version"
+            }
+        }
+
+
+        mingwX64Main {
+            dependencies {
+                dependsOn nativeMain
+            }
+        }
+
+        mingwX86Main {
+            dependencies {
+                dependsOn mingwX64Main
+            }
+        }
+
+
+        linuxX64Main {
+            dependencies {
+                dependsOn nativeMain
+            }
+        }
+
+        linuxArm32HfpMain {
+            dependencies {
+                dependsOn linuxX64Main
+            }
+        }
+
+        jsMain {
+            dependencies {
+                dependsOn commonMain
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version"
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                dependsOn commonMain
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+            }
+        }
+
+        jvmTest {
+            dependencies {
+                implementation group: 'junit', name: 'junit', version: junit_version
+            }
+        }
     }
 }
-
+/*
 task generateDTO(type: pw.binom.krpc.KRpcKotlin) {
     outputDtoList = "pw.binom.builder.remote.DTO_LIST"
     destination = file("${buildDir}/dtogen")
@@ -63,3 +115,4 @@ compileKotlinMingwX64 {
 compileKotlinMingwX86 {
     dependsOn generateDTO
 }
+*/

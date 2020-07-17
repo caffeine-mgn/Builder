@@ -1,10 +1,10 @@
 package pw.binom.builder.common
-
+/*
 import pw.binom.Platform
 import pw.binom.io.AsyncAppendable
 import pw.binom.io.AsyncReader
 import pw.binom.json.*
-/*
+
 class JobDescription(val buildNumber: Long, val path: String, val cmd: String, val env: Map<String, String>, val platform: Platform?) {
 
     suspend fun write(appendable: AsyncAppendable) {

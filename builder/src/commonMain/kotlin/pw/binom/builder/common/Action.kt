@@ -1,8 +1,44 @@
 package pw.binom.builder.common
 
-import pw.binom.io.AsyncAppendable
-import pw.binom.io.AsyncReader
-import pw.binom.json.*
+import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.serializer
+import pw.binom.builder.node.Client
+
+@OptIn(ImplicitReflectionSerializer::class)
+private val dtoModule = SerializersModule {
+    this.polymorphic(Action::class.serializer())
+}
+
+private val actionJsonSerialization = Json(JsonConfiguration.Stable.copy(
+        classDiscriminator = "@class"
+), dtoModule)
+
+@Serializable
+sealed class Action {
+
+    fun toJson() = actionJsonSerialization.stringify(serializer(), this)
+
+    companion object {
+        fun toAction(json: String): Action = actionJsonSerialization.parse(serializer(), json)
+    }
+
+    open suspend fun executeSlave(client: Client): Action? = null
+    open suspend fun executeMaster(): Action? = null
+
+    @Serializable
+    class NodePing(val id: String) : Action()
+
+    @Serializable
+    class NodeConnect(val name: String, val id: String, val tags: List<String>) : Action() {
+    }
+
+    @Serializable
+    class NOP : Action()
+}
 
 /**
  * Действия, который должен проделать сборочный узел

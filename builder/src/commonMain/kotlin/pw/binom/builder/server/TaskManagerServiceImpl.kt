@@ -1,10 +1,11 @@
 package pw.binom.builder.server
-
+/*
 import pw.binom.builder.remote.*
+import pw.binom.builder.server.taskStorage.TaskStorage
 import pw.binom.logger.Logger
 import pw.binom.logger.info
 
-class TaskManagerServiceImpl(private val taskManager: TaskManager) : TaskManagerServiceAsync {
+class TaskManagerServiceImpl(private val taskManager: TaskStorage) : TaskManagerServiceAsync {
     override suspend fun createFolder(path: String, name: String): TaskItem? =
             taskManager.getDir(path)?.createDir(name)?.toTaskItem()
 
@@ -46,3 +47,4 @@ class TaskManagerServiceImpl(private val taskManager: TaskManager) : TaskManager
     }
 
 }
+ */

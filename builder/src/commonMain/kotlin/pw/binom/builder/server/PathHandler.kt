@@ -115,5 +115,4 @@ operator fun PathFilter.plus(other: PathFilter) = object : PathFilter {
         val r = this@plus.request(req) ?: return null
         return other.request(r)
     }
-
 }

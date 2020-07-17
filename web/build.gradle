@@ -17,6 +17,7 @@ task gen(type: ext.ResourceSourceGenerator) {
     objectName = "Res"
     destination = file("build/gen/source/res.kt")
 }
+apply plugin: 'kotlinx-serialization'
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply plugin: 'kotlin-dce-js'

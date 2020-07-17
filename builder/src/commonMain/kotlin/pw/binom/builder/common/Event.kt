@@ -1,9 +1,9 @@
 package pw.binom.builder.common
-
+/*
 import pw.binom.builder.server.Status
 import pw.binom.json.*
 
-/*
+
 sealed class Event {
 
     class JobChangeState(val executeJob: ExecuteJob, val status: Status.Type) : Event() {

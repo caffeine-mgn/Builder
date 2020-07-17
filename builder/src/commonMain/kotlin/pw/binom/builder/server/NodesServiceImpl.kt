@@ -1,5 +1,5 @@
 package pw.binom.builder.server
-
+/*
 import pw.binom.builder.Topic
 import pw.binom.builder.node.NODE_TTL
 import pw.binom.builder.remote.*
@@ -64,3 +64,4 @@ class NodesServiceImpl(val eventTopic: Topic<Struct>, val processService: Proces
     }
 
 }
+*/

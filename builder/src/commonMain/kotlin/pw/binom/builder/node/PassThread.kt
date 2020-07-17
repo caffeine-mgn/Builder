@@ -1,5 +1,5 @@
 package pw.binom.builder.node
-
+/*
 import pw.binom.URL
 import pw.binom.atomic.AtomicBoolean
 import pw.binom.atomic.AtomicReference
@@ -68,3 +68,4 @@ class PassThread(private val serverUrl: URL, val desc: NodeDescription) : Thread
         }
     }
 }
+ */

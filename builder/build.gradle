@@ -1,6 +1,7 @@
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply from: '../resourceGeneratorTask.gradle'
+apply plugin: 'kotlinx-serialization'
 kotlin {
     def nativeEntryPoint = 'pw.binom.builder.main'
     linuxX64 { // Use your target instead.
@@ -80,8 +81,6 @@ kotlin {
                 api "pw.binom.io:httpClient:$network_version"
                 api "pw.binom.io:process:$network_version"
                 api "pw.binom.io:file:$network_version"
-                api "pw.binom.io:json:$network_version"
-                api "pw.binom.io:job:$network_version"
                 api "pw.binom.io:thread:$network_version"
                 api "pw.binom.io:logger:$network_version"
                 api project(":common")

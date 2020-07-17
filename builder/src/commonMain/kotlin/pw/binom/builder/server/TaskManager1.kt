@@ -1,5 +1,5 @@
 package pw.binom.builder.server
-
+/*
 import pw.binom.Date
 import pw.binom.builder.OutType
 import pw.binom.builder.filter
@@ -11,7 +11,7 @@ import pw.binom.io.file.*
 import pw.binom.thread.Thread
 
 
-class TaskManager(val root: File) {
+class TaskManager1(val root: File) {
     abstract inner class Entity(val file: File) {
         val name: String
             get() = file.name
@@ -246,3 +246,4 @@ class TaskManager(val root: File) {
         return !isJob()
     }
 }
+*/

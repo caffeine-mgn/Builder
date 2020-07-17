@@ -4,7 +4,7 @@ import pw.binom.builder.Topic
 import pw.binom.builder.remote.*
 import pw.binom.builder.server.Out
 import pw.binom.builder.server.ProcessServiceImpl
-import pw.binom.builder.server.TaskManager
+import pw.binom.builder.server.TaskManager1
 import pw.binom.builder.server.contextUriWithoutParams
 import pw.binom.io.*
 import pw.binom.io.httpServer.Handler
@@ -27,7 +27,7 @@ fun RPCService<*, *>.findMethod(name: String) = methods.find { it.name == name }
 
 class ApiHandler(val process: ProcessServiceImpl,
                  val taskManager: TaskManagerServiceAsync,
-                 val tt: TaskManager,
+                 val tt: TaskManager1,
                  val eventTopic: Topic<Struct>,
                  val nodesService: NodesServiceAsync) : Handler {
 

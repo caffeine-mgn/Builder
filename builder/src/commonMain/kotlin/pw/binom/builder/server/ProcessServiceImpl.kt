@@ -15,7 +15,7 @@ sealed class Out(val message: String) {
     class Err(message: String) : Out(message)
 }
 
-class ProcessServiceImpl(val taskManager: TaskManager, val eventTopic: Topic<Struct>) : ProcessServiceAsync {
+class ProcessServiceImpl(val taskManager: TaskManager1, val eventTopic: Topic<Struct>) : ProcessServiceAsync {
     override suspend fun cancelled(task: JobProcess) {
     }
 

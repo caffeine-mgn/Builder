@@ -7,12 +7,11 @@ import pw.binom.builder.remote.BuildDescription
 import pw.binom.builder.remote.asShort
 import pw.binom.builder.remote.toProcess
 import pw.binom.getEnvs
+import pw.binom.io.Closeable
 import pw.binom.io.file.File
-import pw.binom.io.file.FileOutputStream
+import pw.binom.io.file.write
 import pw.binom.io.use
 import pw.binom.io.utf8Appendable
-import pw.binom.job.Worker
-import pw.binom.job.execute
 import pw.binom.logger.Logger
 import pw.binom.logger.info
 import pw.binom.popOrNull
@@ -28,10 +27,10 @@ class JobRunner(url: String,
                 val bashPath: File,
                 val job: BuildDescription,
                 val client: Client,
-                val envs: Map<String, String>,
-                val passThread: PassThread) {
+                val envs: Map<String, String>) : Closeable {
     val url = url.removeSuffix("/")
     val out = FreezedStack<Out>().asFiFoQueue()
+
     //    private var events: JobActionListener? = null
     private var cancelled = false
     private val log = Logger.getLog("Runner ${job.toProcess().asShort}")
@@ -54,7 +53,7 @@ class JobRunner(url: String,
 //        )
         try {
             val scriptFile = File(dir, "script.sh")
-            FileOutputStream(scriptFile).use {
+            scriptFile.write().use {
                 it.utf8Appendable().append(job.cmd)
             }
             val env = HashMap(Environment.getEnvs())
@@ -67,22 +66,16 @@ class JobRunner(url: String,
                     workDir = dir.path,
                     args = listOf(scriptFile.path),
                     env = env)
-            val stdout = Worker.execute {
-                ThreadReader(process.stdout, OutType.STDOUT, out)
-            }
+            val stdout = ThreadReader(process.stdout, OutType.STDOUT, out)
+            val stderr = ThreadReader(process.stderr, OutType.STDERR, out)
 
-            val stderr = Worker.execute {
-                ThreadReader(process.stderr, OutType.STDERR, out)
-            }
+            stdout.start()
+            stderr.start()
 
             var stdoutDone = false
             var stderrDone = false
 
             while (true) {
-                if (passThread.canceled) {
-                    log.info("Cancel by passThread")
-                    cancelled = true
-                }
                 try {
 //                    actionProcess()
                     if (cancelled) {
@@ -147,5 +140,9 @@ class JobRunner(url: String,
             }
 
         return true
+    }
+
+    override fun close() {
+        cancelled = true
     }
 }
