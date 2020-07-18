@@ -1,27 +1,22 @@
 package pw.binom.builder
 
-import pw.binom.Environment
-import pw.binom.URL
 import pw.binom.builder.cli.CmdRunner
-import pw.binom.builder.client.Client
-import pw.binom.builder.remote.JobProcess
-import pw.binom.builder.server.Server
-import pw.binom.getEnv
-import pw.binom.io.httpClient.AsyncHttpClient
-import pw.binom.io.socket.nio.SocketNIOManager
+import pw.binom.builder.master.MasterThread
+//import pw.binom.builder.server.Server
+import pw.binom.process.Signal
 
 fun main(args: Array<String>) {
     execute(args, CmdRunner())
 }
-
-abstract class NetTask : Function() {
+/*
+abstract class NetTask : Cmd() {
     protected val manager = SocketNIOManager()
     private val httpClient = AsyncHttpClient(manager)
     protected abstract val url: URL
     protected val client by lazy { Client(url, httpClient) }
 }
-
-class RunServer : Function() {
+*/
+class RunServer : Cmd() {
     override val description: String?
         get() = "Starts Build Server"
     private val projectDir by param("project-dir", "Project for search jobs")
@@ -38,11 +33,17 @@ class RunServer : Function() {
             .require()
 
     override fun execute(): Result = action {
-        Server(
-                jobsPath = projectDir,
-                bind = bind.map { it.host to (it.port ?: it.defaultPort!!) },
-                rootUri = rootUri
-        ).start()
+        val masterThread = MasterThread(bind.map { it.host to (it.port ?: it.defaultPort!!) })
+        masterThread.start()
+        Signal.listen(Signal.Type.CTRL_C) {
+            masterThread.interrupt()
+        }
+        masterThread.join()
+//        Server(
+//                jobsPath = projectDir,
+//                bind = bind.map { it.host to (it.port ?: it.defaultPort!!) },
+//                rootUri = rootUri
+//        ).start()
     }
 }
 
@@ -99,22 +100,7 @@ class ExecutesCmd : Function() {
             }
 }
 */
-class StartJob : NetTask() {
-    private val jobId by param("job").require()
-    override val url by param("server")
-            .default { Environment.getEnv(SERVER_ADDR) }
-            .require()
-            .url()
 
-    override fun execute(): Result =
-            action {
-                val exe = manager.sync { client.processService.execute(jobId) }
-                println("Start job ${exe.path}:${exe.buildNumber}")
-            }
-
-    override val description: String?
-        get() = "Starts Job"
-}
 /*
 class TailCmd : Function() {
 
@@ -136,24 +122,7 @@ class TailCmd : Function() {
 
 }
 */
-class CancelCmd : NetTask() {
 
-    private val jobId by param("job").require()
-    private val build by param("build").require().long()
-    override val url by param("server")
-            .default { Environment.getEnv(SERVER_ADDR) }
-            .require()
-            .url()
-
-    override val description: String?
-        get() = "Cancel the job"
-
-    override fun execute(): Result =
-            action {
-                manager.sync { client.processService.cancel(JobProcess(buildNumber = build, path = jobId)) }
-            }
-
-}
 
 /*
 class NodesCmd : Function() {

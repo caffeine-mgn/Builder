@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import pw.binom.builder.node.Client
+import pw.binom.builder.master.Master
 
 @OptIn(ImplicitReflectionSerializer::class)
 private val dtoModule = SerializersModule {
@@ -27,10 +28,15 @@ sealed class Action {
     }
 
     open suspend fun executeSlave(client: Client): Action? = null
-    open suspend fun executeMaster(): Action? = null
+    open suspend fun executeMaster(master: Master): Action? = null
 
     @Serializable
-    class NodePing(val id: String) : Action()
+    class NodePing(val id: String) : Action(){
+        override suspend fun executeMaster(master: Master): Action? {
+            println("Execute on Master!")
+            return super.executeMaster(master)
+        }
+    }
 
     @Serializable
     class NodeConnect(val name: String, val id: String, val tags: List<String>) : Action() {

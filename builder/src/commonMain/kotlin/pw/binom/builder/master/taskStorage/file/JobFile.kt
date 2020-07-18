@@ -1,7 +1,7 @@
-package pw.binom.builder.server.taskStorage.file
+package pw.binom.builder.master.taskStorage.file
 
 import pw.binom.builder.map
-import pw.binom.builder.server.taskStorage.TaskStorage
+import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.io.file.File
 import pw.binom.io.file.iterator
 import pw.binom.io.file.read

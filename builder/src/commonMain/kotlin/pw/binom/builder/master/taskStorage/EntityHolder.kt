@@ -1,4 +1,4 @@
-package pw.binom.builder.server.taskStorage
+package pw.binom.builder.master.taskStorage
 
 interface EntityHolder {
     fun getEntity(path: String): TaskStorage.Entity?

@@ -1,5 +1,5 @@
 package pw.binom.builder.client
-
+/*
 import pw.binom.URL
 import pw.binom.async
 import pw.binom.builder.common.JobEntity
@@ -202,3 +202,4 @@ class Client(val serverUrl: URL,client:AsyncHttpClient) : AbstractClient() {
     }
     */
 }
+*/

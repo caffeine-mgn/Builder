@@ -1,5 +1,6 @@
 package pw.binom.builder.web
 
+/*
 import pw.binom.URL
 import pw.binom.builder.Topic
 import pw.binom.builder.remote.NodesServiceAsync
@@ -43,3 +44,5 @@ fun HttpRequest.param(name: String) = params[name]
         ?: throw RootHandler.APIException("Request Param \"$name\" not exist. $method ${contextUri}")
 
 fun HttpRequest.pageNotFound(): Nothing = throw RootHandler.APIException("Page ${method} ${this.contextUri} not found")
+
+ */

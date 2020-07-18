@@ -1,4 +1,4 @@
-package pw.binom.builder.server
+package pw.binom.builder.master
 
 import pw.binom.io.UTF8
 import pw.binom.io.httpServer.Handler

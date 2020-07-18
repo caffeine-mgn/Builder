@@ -1,4 +1,4 @@
-package pw.binom.builder.server
+package pw.binom.builder.master
 /*
 import pw.binom.Date
 import pw.binom.builder.OutType

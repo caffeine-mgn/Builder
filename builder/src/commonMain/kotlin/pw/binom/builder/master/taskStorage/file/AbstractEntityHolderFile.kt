@@ -1,13 +1,11 @@
-package pw.binom.builder.server.taskStorage.file
+package pw.binom.builder.master.taskStorage.file
 
 import pw.binom.builder.map
-import pw.binom.builder.server.taskStorage.EntityHolder
-import pw.binom.builder.server.taskStorage.TaskStorage
+import pw.binom.builder.master.taskStorage.EntityHolder
+import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.io.file.*
-import pw.binom.io.readText
 import pw.binom.io.use
 import pw.binom.io.utf8Appendable
-import pw.binom.io.utf8Reader
 
 abstract class AbstractEntityHolderFile : EntityHolder, TaskStorage.Entity {
 

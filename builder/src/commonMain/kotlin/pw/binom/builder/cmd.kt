@@ -6,7 +6,7 @@ import pw.binom.io.file.File
 import kotlin.jvm.JvmName
 import kotlin.reflect.KProperty
 
-fun execute(args: Array<String>, func: Function) {
+fun execute(args: Array<String>, func: Cmd) {
     var func = func
     try {
         var i = 0
@@ -81,11 +81,11 @@ sealed class Result {
     }
 
     abstract class SubFunctions : Result() {
-        abstract val functions: Map<String, Function>
+        abstract val functions: Map<String, Cmd>
     }
 }
 
-abstract class Function {
+abstract class Cmd {
     internal val params = HashMap<String, Value<*>>()
     internal val flags = HashMap<String, FlagImpl>()
     abstract val description: String?
@@ -146,8 +146,8 @@ abstract class Function {
         }
     }
 
-    fun dir(vararg functions: Pair<String, Function>) = object : Result.SubFunctions() {
-        override val functions: Map<String, Function>
+    fun dir(vararg functions: Pair<String, Cmd>) = object : Result.SubFunctions() {
+        override val functions: Map<String, Cmd>
             get() = functions.toMap()
 
     }

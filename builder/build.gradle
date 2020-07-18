@@ -36,37 +36,14 @@ kotlin {
         }
     }
 
-    jvm()
-/*
-    targets {
-
-        fromPreset(kotlin.presets.linuxX64, 'linuxX64') {
-            compilations.main.outputKinds 'executable'
-            compilations.main.entryPoint = 'pw.binom.builder.main'
+    jvm {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
         }
-
-        fromPreset(kotlin.presets.linuxArm32Hfp, 'linuxArm32') {
-            compilations.main.outputKinds 'executable'
-            compilations.main.entryPoint = 'pw.binom.builder.main'
-        }
-
-        fromPreset(kotlin.presets.mingwX64, 'mingw') {
-            compilations.main.outputKinds 'executable'
-            compilations.main.entryPoint = 'pw.binom.builder.main'
-        }
-
-        fromPreset(kotlin.presets.mingwX86, 'mingwX86') {
-            compilations.main.outputKinds 'executable'
-            compilations.main.entryPoint = 'pw.binom.builder.main'
-        }
-
-        presets.forEach {
-            println("target=${it.name}")
-        }
-
-        jvm()
     }
-*/
+
     presets.forEach {
         println("target=${it.name}")
     }
@@ -83,10 +60,11 @@ kotlin {
                 api "pw.binom.io:file:$network_version"
                 api "pw.binom.io:thread:$network_version"
                 api "pw.binom.io:logger:$network_version"
-                api project(":common")
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
+//                api project(":common")
             }
 
-            kotlin.srcDir('build/gen/server')
+//            kotlin.srcDir('build/gen/server')
         }
 
         commonTest {
@@ -99,6 +77,7 @@ kotlin {
         nativeMain {
             dependencies {
                 dependsOn commonMain
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serialization_version"
             }
         }
 
@@ -129,6 +108,7 @@ kotlin {
         jvmMain {
             dependencies {
                 api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
             }
         }
 
@@ -145,7 +125,7 @@ task generateJsSource(type: ResourceSourceGenerator) {
     destination = file("${project.buildFile.parentFile}/build/gen/server/resources.kt")
     packageName = "pw.binom.builder"
     objectName = "Resources"
-
+    /*
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/kotlin.js"), "kotlin_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/common.js"), "common_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/json.js"), "json_js")
@@ -154,14 +134,14 @@ task generateJsSource(type: ResourceSourceGenerator) {
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/core.js"), "core_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/web.js"), "web_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/org.tlsys.css.js"), "css_js")
+    */
     addFile(file("src/commonMain/resources/ace.js"))
     addFile(file("src/commonMain/resources/tomorrow_night.js"))
     addFile(file("src/commonMain/resources/mode-sh.js"))
 }
 
 
-
-
+/*
 compileKotlinJvm {
     dependsOn generateJsSource
 }
@@ -181,7 +161,7 @@ linkReleaseExecutableMingwX64 {
 linkReleaseExecutableMingwX86 {
     dependsOn generateJsSource
 }
-
+*/
 jvmJar {
     with {
         from {

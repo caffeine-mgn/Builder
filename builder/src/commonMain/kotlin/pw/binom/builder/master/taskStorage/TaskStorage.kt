@@ -1,6 +1,4 @@
-package pw.binom.builder.server.taskStorage
-
-import kotlinx.serialization.Serializable
+package pw.binom.builder.master.taskStorage
 
 interface TaskStorage : EntityHolder {
     interface Entity {

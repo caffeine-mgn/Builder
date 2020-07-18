@@ -1,20 +1,10 @@
-package pw.binom.builder.server
-
-import pw.binom.builder.Topic
-import pw.binom.builder.remote.*
-import pw.binom.krpc.Struct
-import pw.binom.logger.Logger
-import pw.binom.logger.info
-import pw.binom.logger.warn
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+package pw.binom.builder.master
 
 sealed class Out(val message: String) {
     class Std(message: String) : Out(message)
     class Err(message: String) : Out(message)
 }
-
+/*
 class ProcessServiceImpl(val taskManager: TaskManager1, val eventTopic: Topic<Struct>) : ProcessServiceAsync {
     override suspend fun cancelled(task: JobProcess) {
     }
@@ -199,3 +189,4 @@ class ProcessServiceImpl(val taskManager: TaskManager1, val eventTopic: Topic<St
         getProcess(task).start()
     }
 }
+*/

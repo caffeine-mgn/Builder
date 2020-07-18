@@ -1,4 +1,4 @@
-package pw.binom.builder.server.taskStorage.file
+package pw.binom.builder.master.taskStorage.file
 
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Serializable

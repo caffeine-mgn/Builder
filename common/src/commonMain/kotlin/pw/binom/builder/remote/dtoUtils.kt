@@ -1,5 +1,5 @@
 package pw.binom.builder.remote
-
+/*
 fun BuildDescription.toProcess() = JobProcess(
         buildNumber = buildNumber,
         path = path
@@ -29,3 +29,4 @@ fun JobStatus.newStatus(status: JobStatusType) =
 
 val JobProcess.asShort
     get() = "$path:$buildNumber"
+*/
