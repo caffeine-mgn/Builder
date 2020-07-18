@@ -13,11 +13,12 @@ import pw.binom.thread.Thread
 import pw.binom.uuid
 import kotlin.random.Random
 
-class ClientThread(val serverUrl: URL, val name: String) : Thread(), Client {
-
+class ClientThread(serverUrl: URL, val name: String) : Thread(), Client {
+    val serverUrl = serverUrl.newURI("${serverUrl.uri.removeSuffix("/")}/rpc")
     private val clientId = Random.uuid()
 
     override fun run() {
+
         val manager = SocketNIOManager()
         val client = AsyncHttpClient(manager)
         try {
@@ -35,11 +36,11 @@ class ClientThread(val serverUrl: URL, val name: String) : Thread(), Client {
                                         it.flush()
                                     }
                                     .response().use { response ->
-                                        if (response.responseCode == 200) {
-                                            Action.toAction(response.utf8Reader().readText())
+                                        when (response.responseCode) {
+                                            200 -> Action.toAction(response.utf8Reader().readText())
                                                     .executeSlave(this)
-                                        } else {
-                                            null
+                                            204 -> null
+                                            else -> TODO()
                                         }
                                     }
                         } catch (e: Throwable) {

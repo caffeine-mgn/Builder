@@ -2,11 +2,11 @@ package pw.binom.builder.cli
 
 import pw.binom.Environment
 import pw.binom.builder.*
+import pw.binom.builder.node.ClientThread
 import pw.binom.getEnv
-import kotlin.Function
-import kotlin.Result
+import pw.binom.process.Signal
 
-class RunNode : pw.binom.builder.Function() {
+class RunNode : pw.binom.builder.Cmd() {
     override val description: String?
         get() = "Starts Build Node"
     val envs by paramList("env").convert {
@@ -41,13 +41,22 @@ class RunNode : pw.binom.builder.Function() {
             .notBlank()
 
     override fun execute(): pw.binom.builder.Result = action {
-        Node(
-                bashPath = bashPath,
-                buildPath = buildPath,
-                url = serverUrl.toString(),
-                id = id,
-                dataCenter = dataCenter,
-                envs = envs
-        ).start()
+        val clientThread = ClientThread(
+                serverUrl = serverUrl,
+                name = "Test"
+        )
+        clientThread.start()
+        Signal.listen(Signal.Type.CTRL_C) {
+            clientThread.interrupt()
+        }
+        clientThread.join()
+//        Node(
+//                bashPath = bashPath,
+//                buildPath = buildPath,
+//                url = serverUrl.toString(),
+//                id = id,
+//                dataCenter = dataCenter,
+//                envs = envs
+//        ).start()
     }
 }

@@ -1,5 +1,5 @@
 package pw.binom.builder.server
-
+/*
 import pw.binom.builder.remote.EnvVar
 import pw.binom.builder.remote.JobInformation
 import pw.binom.io.asAsync
@@ -98,3 +98,5 @@ class JobFile private constructor(
         }
     }
 }
+
+ */

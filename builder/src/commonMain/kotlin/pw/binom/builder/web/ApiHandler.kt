@@ -1,5 +1,5 @@
 package pw.binom.builder.web
-
+/*
 import pw.binom.builder.Topic
 import pw.binom.builder.remote.*
 import pw.binom.builder.server.Out
@@ -131,3 +131,4 @@ class ApiHandler(val process: ProcessServiceImpl,
     }
 
 }
+*/

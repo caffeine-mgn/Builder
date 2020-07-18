@@ -1,5 +1,5 @@
 package pw.binom.builder.web
-
+/*
 import pw.binom.Base64DecodeAppendable
 import pw.binom.URL
 import pw.binom.builder.Resources
@@ -216,3 +216,5 @@ class WebUiHandler(val url: URL) : PathHandler() {
         super.request(req, resp)
     }
 }
+
+ */
