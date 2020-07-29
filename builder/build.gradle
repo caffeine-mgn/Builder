@@ -60,8 +60,9 @@ kotlin {
                 api "pw.binom.io:file:$network_version"
                 api "pw.binom.io:thread:$network_version"
                 api "pw.binom.io:logger:$network_version"
+                api "pw.binom.io:flux:$network_version"
                 api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
-//                api project(":common")
+                api project(":common")
             }
 
 //            kotlin.srcDir('build/gen/server')

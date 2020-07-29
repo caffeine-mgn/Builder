@@ -3,8 +3,10 @@ package pw.binom.builder.cli
 import pw.binom.Environment
 import pw.binom.builder.*
 import pw.binom.builder.node.ClientThread
+import pw.binom.builder.node.slaveConfig
 import pw.binom.getEnv
 import pw.binom.process.Signal
+import pw.binom.strong.Strong
 
 class RunNode : pw.binom.builder.Cmd() {
     override val description: String?
@@ -15,7 +17,7 @@ class RunNode : pw.binom.builder.Cmd() {
             item[0] to item[1]
         }.toMap()
     }
-    val tags by paramList("tag")
+    val tags by paramList("tag").convert { it.toSet() }
 
     private val bashPath by param("bash-path", "Path to Bash. For example, on linux using \"/bin/bash\". On Windows use cygwin")
             .require()
@@ -40,13 +42,17 @@ class RunNode : pw.binom.builder.Cmd() {
             .require()
             .notBlank()
 
-    override fun execute(): pw.binom.builder.Result = action {
-        val clientThread = ClientThread(
-                serverUrl = serverUrl,
-                name = "Test"
-        )
+    override fun execute() = action {
+        val strong = Strong.create(slaveConfig(
+                serverUrL = serverUrl,
+                name = id,
+                tags = tags,
+                baseDir = buildPath,
+                bashPath = bashPath
+        ))
+        val clientThread by strong.service<ClientThread>()
         clientThread.start()
-        Signal.listen(Signal.Type.CTRL_C) {
+        Signal.addShutdownHook {
             clientThread.interrupt()
         }
         clientThread.join()

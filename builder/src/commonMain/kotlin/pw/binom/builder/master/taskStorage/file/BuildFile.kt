@@ -27,24 +27,36 @@ class BuildFile(val file: File, override val job: TaskStorage.Job) : TaskStorage
 
     private val outputFile = File(file, "output.txt")
 
-    override val status: TaskStorage.BuildStatus
+    override var status: TaskStorage.JobStatusType
         get() = when (data.status) {
-            BuildDto.BuildStatus.PREPARE -> TaskStorage.BuildStatus.PREPARE
-            BuildDto.BuildStatus.PROCESS -> TaskStorage.BuildStatus.PROCESS
-            BuildDto.BuildStatus.FINISHED_OK -> TaskStorage.BuildStatus.FINISHED_OK
-            BuildDto.BuildStatus.FINISHED_ERROR -> TaskStorage.BuildStatus.FINISHED_ERROR
-            BuildDto.BuildStatus.CANCELED -> TaskStorage.BuildStatus.CANCELED
+            BuildDto.BuildStatus.PREPARE -> TaskStorage.JobStatusType.PREPARE
+            BuildDto.BuildStatus.PROCESS -> TaskStorage.JobStatusType.PROCESS
+            BuildDto.BuildStatus.FINISHED_OK -> TaskStorage.JobStatusType.FINISHED_OK
+            BuildDto.BuildStatus.FINISHED_ERROR -> TaskStorage.JobStatusType.FINISHED_ERROR
+            BuildDto.BuildStatus.CANCELED -> TaskStorage.JobStatusType.CANCELED
+        }
+        set(value) {
+            data.status = when (value) {
+                TaskStorage.JobStatusType.PREPARE -> BuildDto.BuildStatus.PREPARE
+                TaskStorage.JobStatusType.PROCESS -> BuildDto.BuildStatus.PROCESS
+                TaskStorage.JobStatusType.FINISHED_OK -> BuildDto.BuildStatus.FINISHED_OK
+                TaskStorage.JobStatusType.FINISHED_ERROR -> BuildDto.BuildStatus.FINISHED_ERROR
+                TaskStorage.JobStatusType.CANCELED -> BuildDto.BuildStatus.CANCELED
+            }
+            File(file, "build.json").write().utf8Appendable().use {
+                it.append(taskStorageJsonSerialization.stringify(BuildDto.serializer(), data))
+            }
         }
 
     override fun addStdout(text: String) {
         outputFile.write(true).utf8Appendable().use {
-            it.append("STDOUT:$text")
+            it.append("STDOUT:$text\n")
         }
     }
 
     override fun addStderr(text: String) {
         outputFile.write(true).utf8Appendable().use {
-            it.append("STDERR:$text")
+            it.append("STDERR:$text\n")
         }
     }
 

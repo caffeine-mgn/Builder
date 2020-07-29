@@ -1,12 +1,12 @@
 apply from: '../resourceGeneratorTask.gradle'
 
 
-task gen(type: ext.ResourceSourceGenerator) {
-    addFile(file("src/images/add.svg"))
-    packageName = "pw.binom.res"
-    objectName = "Res"
-    destination = file("build/gen/source/res.kt")
-}
+//task gen(type: ext.ResourceSourceGenerator) {
+//    addFile(file("src/images/add.svg"))
+//    packageName = "pw.binom.res"
+//    objectName = "Res"
+//    destination = file("build/gen/source/res.kt")
+//}
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply plugin: 'kotlinx-serialization'
@@ -27,8 +27,8 @@ kotlin {
                 api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
             }
 
-            kotlin.srcDir('build/gen/server')
-            kotlin.srcDir('build/dtogen')
+//            kotlin.srcDir('build/gen/server')
+//            kotlin.srcDir('build/dtogen')
         }
 
         nativeMain {

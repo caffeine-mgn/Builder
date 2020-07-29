@@ -1,13 +1,16 @@
 package pw.binom.builder
 
+//import pw.binom.builder.server.Server
 import pw.binom.builder.cli.CmdRunner
 import pw.binom.builder.master.MasterThread
-//import pw.binom.builder.server.Server
+import pw.binom.builder.master.masterConfig
 import pw.binom.process.Signal
+import pw.binom.strong.Strong
 
 fun main(args: Array<String>) {
     execute(args, CmdRunner())
 }
+
 /*
 abstract class NetTask : Cmd() {
     protected val manager = SocketNIOManager()
@@ -32,11 +35,24 @@ class RunServer : Cmd() {
             .default { "/" }
             .require()
 
+    private val telegramToken by param("telegram-token", "Token for Telegram Bot")
+
     override fun execute(): Result = action {
-        val masterThread = MasterThread(bind.map { it.host to (it.port ?: it.defaultPort!!) })
+
+        val strong = Strong.create(masterConfig(
+                bind = bind.map { it.host to (it.port ?: it.defaultPort!!) },
+                tasksRoot = projectDir,
+                telegramToken = telegramToken
+        ))
+
+        val masterThread by strong.service<MasterThread>()
+
         masterThread.start()
-        Signal.listen(Signal.Type.CTRL_C) {
+        Signal.addShutdownHook {
+            println("Shutdown!")
             masterThread.interrupt()
+            masterThread.join()
+            println("OK!")
         }
         masterThread.join()
 //        Server(

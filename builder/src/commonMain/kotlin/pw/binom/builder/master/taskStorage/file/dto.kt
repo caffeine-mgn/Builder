@@ -8,10 +8,10 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 @Serializable
-class JobDto(val cmd: String, val env: Map<String, String>, val include: List<String>, val exclude: List<String>, var nextBuild: Int)
+class JobDto(val cmd: String, val env: Map<String, String>, val include: Set<String>, val exclude: Set<String>, var nextBuild: Int)
 
 @Serializable
-class BuildDto(val status: BuildStatus) {
+class BuildDto(var status: BuildStatus) {
     enum class BuildStatus {
         PREPARE,
         PROCESS,

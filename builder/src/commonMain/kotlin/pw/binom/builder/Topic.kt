@@ -1,38 +1,50 @@
 package pw.binom.builder
 
+import pw.binom.Stack
 import pw.binom.io.Closeable
 import pw.binom.io.ClosedException
+import pw.binom.thread.Lock
+import pw.binom.thread.synchronize
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class Topic<T> : Closeable {
+/*
+class Topic<T:Any> : Closeable {
 
-    private val waiters = ArrayList<Continuation<T>>()
+    private val waiters = Stack<Continuation<T>>()
+    private val lock = Lock()
 
     private var _closed: Boolean = false
     val closed
         get() = _closed
 
     override fun close() {
-        waiters.forEach {
-            it.resumeWithException(ClosedException())
+        lock.synchronize {
+            while (!waiters.isEmpty) {
+                waiters.popLast().resumeWithException(ClosedException())
+            }
+            _closed = true
         }
-        waiters.clear()
-        _closed = true
     }
 
     /**
      * @throws ClosedException возникает когда топик закрыт
      */
     fun dispatch(value: T) {
-        if (closed)
-            throw ClosedException()
-        waiters.forEach {
-            it.resume(value)
+
+        lock.synchronize {
+            val list = ArrayList<Continuation<T>>(waiters.size)
+            if (closed)
+                throw ClosedException()
+            while (!waiters.isEmpty) {
+                list.add(waiters.popLast())
+            }
+            list.forEach {
+                it.resume(value)
+            }
         }
-        waiters.clear()
     }
 
     /**
@@ -40,7 +52,10 @@ class Topic<T> : Closeable {
      */
     suspend fun wait(): T {
         return suspendCoroutine {
-            waiters.add(it)
+            lock.synchronize {
+                waiters.pushFirst(it)
+            }
         }
     }
 }
+*/

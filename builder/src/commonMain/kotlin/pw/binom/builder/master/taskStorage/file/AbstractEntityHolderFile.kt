@@ -45,7 +45,8 @@ abstract class AbstractEntityHolderFile : EntityHolder, TaskStorage.Entity {
                 exclude = config.exclude,
                 nextBuild = 1
         ))
-        File(file, name).write().utf8Appendable().use {
+        val dir = File(file, name)
+        File(dir, "job.json").write().utf8Appendable().use {
             it.append(jobText)
         }
     }

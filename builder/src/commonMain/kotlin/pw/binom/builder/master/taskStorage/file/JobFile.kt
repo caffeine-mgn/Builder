@@ -13,7 +13,7 @@ import pw.binom.io.utf8Reader
 
 class JobFile(override val file: File, override val taskStorage: TaskStorageFile) : TaskStorage.Job, AbstractEntityHolderFile() {
     private val data by lazy {
-        file.read().utf8Reader().use {
+        File(file, "job.json").read().utf8Reader().use {
             taskStorageJsonSerialization.parse(JobDto.serializer(), it.readText())
         }
     }
@@ -22,8 +22,8 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
         val f = File(file, build.toString())
         if (!f.isDirectory)
             return null
-        f.mkdir()
-        return BuildFile(file, this)
+
+        return BuildFile(f, this)
     }
 
     override fun getBuilds(): List<TaskStorage.Build> =
@@ -34,13 +34,27 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
             }
 
     override fun createBuild(): TaskStorage.Build {
-        val num = data.nextBuild++
+        val num = data.nextBuild
         val f = File(file, num.toString())
         f.mkdir()
         File(f, "build.json").write().utf8Appendable().use {
             it.append(taskStorageJsonSerialization.stringify(BuildDto.serializer(), BuildDto(BuildDto.BuildStatus.PREPARE)))
         }
         File(f, "output.txt").write().close()
+
+        data.nextBuild = num + 1
+        File(file, "job.json").write().utf8Appendable().use {
+            it.append(taskStorageJsonSerialization.stringify(JobDto.serializer(), data))
+        }
+
         return BuildFile(f, this)
     }
+
+    override val config: TaskStorage.JobConfig
+        get() = TaskStorage.JobConfig(
+                cmd = data.cmd,
+                exclude = data.exclude,
+                include = data.include,
+                env = data.env
+        )
 }
