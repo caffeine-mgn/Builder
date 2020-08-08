@@ -4,11 +4,10 @@ import pw.binom.async
 import pw.binom.builder.common.Action
 import pw.binom.builder.master.MasterThread
 import pw.binom.builder.master.SlaveService
-import pw.binom.builder.master.TaskScheduler
+import pw.binom.builder.master.services.TaskSchedulerService
 import pw.binom.io.file.File
 import pw.binom.io.file.read
 import pw.binom.io.file.write
-import pw.binom.io.http.websocket.MessageType
 import pw.binom.io.readText
 import pw.binom.io.socket.nio.SocketNIOManager
 import pw.binom.io.use
@@ -23,7 +22,7 @@ class TelegramService(strong: Strong, val basePath: File, val token: String) : S
     private val recive = SocketNIOManager()
     private val telegramFile = File(basePath, "telegram.ini")
     private val slaveService by strong.service<SlaveService>()
-    private val taskScheduler by strong.service<TaskScheduler>()
+    private val taskScheduler by strong.service<TaskSchedulerService>()
     private val reciveApi = run {
         val lastMessage = if (telegramFile.isFile)
             telegramFile.read().utf8Reader().use { it.readText() }.toLong()
@@ -39,7 +38,22 @@ class TelegramService(strong: Strong, val basePath: File, val token: String) : S
     private fun processingMessage(chatId: Long, cmd: String) {
         if (cmd.startsWith("build ")) {
             val task = cmd.removePrefix("build ")
-            taskScheduler.submitTask(task)
+            val buildNum = taskScheduler.submitTask(task)
+            async {
+                if (buildNum == null) {
+                    reciveApi.sendMessage(TelegramApi.TextMessage(
+                            chat_id = chatId.toString(),
+                            text = "Task \"$task\" *not found*",
+                            parseMode = TelegramApi.ParseMode.MARKDOWN_V2
+                    ))
+                } else {
+                    reciveApi.sendMessage(TelegramApi.TextMessage(
+                            chat_id = chatId.toString(),
+                            text = "Task _${task}_ *scheduled*\\. Build Number: *$buildNum*",
+                            parseMode = TelegramApi.ParseMode.MARKDOWN_V2
+                    ))
+                }
+            }
         }
         if (cmd == "keys") {
             val txt = masterThread.manager.keys.mapIndexed { index, selectorKey ->
@@ -79,13 +93,8 @@ class TelegramService(strong: Strong, val basePath: File, val token: String) : S
                         val updates = reciveApi.getUpdate()
                         updates.forEach {
                             val message = it.message ?: return@forEach
-//                            println("${message.from?.userName?.let { "@$it: " }}${message.text}")
                             if (message.text != null) {
                                 processingMessage(message.chat.id, message.text)
-//                                reciveApi.sendMessage(TelegramApi.TextMessage(
-//                                        chat_id = message.chat.id.toString(),
-//                                        text = "Echo ${message.text}"
-//                                ))
                             }
                         }
                         telegramFile.write().utf8Appendable().use {

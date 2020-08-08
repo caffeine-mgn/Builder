@@ -3,6 +3,7 @@ package pw.binom.builder
 import pw.binom.MalformedURLException
 import pw.binom.URL
 import pw.binom.io.file.File
+import pw.binom.io.file.mkdirs
 import kotlin.jvm.JvmName
 import kotlin.reflect.KProperty
 
@@ -157,6 +158,10 @@ abstract class Cmd {
 
 class InvalidCommandArgumentException(message: String) : RuntimeException(message)
 
+fun Value<String>.toInt() = convert<Int> {
+    it.toIntOrNull() ?: throw InvalidCommandArgumentException("Can't convert -$name [\"$it\"] to Integer")
+}
+
 fun <T : Any> Value<T?>.require() = convert<T> {
     if (it == null)
         throw InvalidCommandArgumentException("Require Argument \"-$name\"")
@@ -218,7 +223,7 @@ abstract class AbstractValue<T> : Value<T> {
     }
 }
 
-fun Value<String>.file() = convert { File(it) }
+fun Value<String>.path() = convert { File(it) }
 fun Value<String>.notBlank() = convert {
     if (it.isBlank())
         throw InvalidCommandArgumentException("Value is blank")
@@ -248,6 +253,30 @@ fun Value<List<String>>.url() = convert {
     }
 }
 
+@JvmName("hostPortList")
+fun Value<List<String>>.hostPort() = convert {
+    it.map {
+        val items = it.split(":", limit = 2)
+        if (items.size != 2)
+            throw InvalidCommandArgumentException("Invalid host \"$it\"")
+        val host = items[0].takeIf { it.isNotBlank() }
+                ?: throw InvalidCommandArgumentException("Invalid host \"${items[0]}\"")
+        val port = items[1].toIntOrNull() ?: throw InvalidCommandArgumentException("Invalid port \"${items[1]}\"")
+        host to port
+    }
+}
+
+@JvmName("hostPort")
+fun Value<String>.hostPort() = convert {
+    val items = it.split(":", limit = 2)
+    if (items.size != 2)
+        throw InvalidCommandArgumentException("Invalid host \"$it\"")
+    val host = items[0].takeIf { it.isNotBlank() }
+            ?: throw InvalidCommandArgumentException("Invalid host \"${items[0]}\"")
+    val port = items[1].toIntOrNull() ?: throw InvalidCommandArgumentException("Invalid port \"${items[1]}\"")
+    host to port
+}
+
 fun Value<File>.fileExist() = convert {
     if (!it.isFile)
         throw InvalidCommandArgumentException("File \"$it\" is not exist")
@@ -257,6 +286,12 @@ fun Value<File>.fileExist() = convert {
 fun Value<File>.dirExist() = convert {
     if (!it.isDirectory)
         throw InvalidCommandArgumentException("File \"$it\" is not exist")
+    it
+}
+
+fun Value<File>.createDir() = convert {
+    if (!it.isDirectory)
+        it.mkdirs()
     it
 }
 

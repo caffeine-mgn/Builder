@@ -1,8 +1,10 @@
 package pw.binom.builder.web
 
 import org.tlsys.css.CSS
+import org.tlsys.css.TreeSecretedCssClass
+import org.w3c.xhr.FormData
 import org.w3c.xhr.XMLHttpRequest
-import pw.binom.builder.remote.*
+import pw.binom.builder.dto.User
 import pw.binom.io.Closeable
 import kotlin.browser.document
 import kotlin.browser.window
@@ -129,25 +131,147 @@ suspend fun fff(): Char? {
         return '1'
 }
 
-fun main() {
-    CSS {
-        "*"{
-            minHeight = "0px"
-            minWidth = "0px"
-        }
-        "body"{
-            height = "100%"
-            width = "100%"
-            margin = "0px"
-            backgroundColor = "#262626"
-        }
-    }
-    val mainLayout = FlexLayout(document.body!!)
-    NavigateMenu.appendTo(mainLayout,grow = 0,shrink = 0)
+class UnauthorizedException : RuntimeException()
+class LockedException : RuntimeException()
+class MethodNotAllowedException : RuntimeException()
 
-    val pageLayout=DivLayout(direction = FlexLayout.Direction.Column)
+object Request1 {
+
+    suspend fun get(path: String) = suspendCoroutine<String> { c ->
+        val rr = XMLHttpRequest()
+        rr.withCredentials = true
+
+        rr.onreadystatechange = {
+            if (rr.readyState == XMLHttpRequest.DONE) {
+                when (rr.status.toInt()) {
+                    200 -> c.resume(rr.responseText)
+                    204 -> c.resume("")
+                    400 -> c.resumeWithException(RuntimeException("400 code"))
+                    401 -> c.resumeWithException(UnauthorizedException())
+                    405 -> c.resumeWithException(MethodNotAllowedException())
+                    423 -> c.resumeWithException(LockedException())
+                }
+            }
+        }
+        rr.open(method = "GET", url = "$serverUrl/${path.removePrefix("/")}", async = true)
+        rr.send()
+    }
+
+    suspend fun delete(path: String) = suspendCoroutine<String> { c ->
+        val rr = XMLHttpRequest()
+        rr.withCredentials = true
+
+        rr.onreadystatechange = {
+            if (rr.readyState == XMLHttpRequest.DONE) {
+                when (rr.status.toInt()) {
+                    200 -> c.resume(rr.responseText)
+                    204 -> c.resume("")
+                    400 -> c.resumeWithException(RuntimeException("400 code"))
+                    401 -> c.resumeWithException(UnauthorizedException())
+                    405 -> c.resumeWithException(MethodNotAllowedException())
+                    423 -> c.resumeWithException(LockedException())
+                }
+            }
+        }
+        rr.open(method = "DELETE", url = "$serverUrl/${path.removePrefix("/")}", async = true)
+        rr.send()
+    }
+
+    suspend fun put(url: String, formData: String): String =
+            suspendCoroutine { c ->
+                val rr = XMLHttpRequest()
+                rr.withCredentials = true
+
+                rr.onreadystatechange = {
+                    if (rr.readyState == XMLHttpRequest.DONE) {
+                        when (rr.status.toInt()) {
+                            200 -> c.resume(rr.responseText)
+                            204 -> c.resume("")
+                            400 -> c.resumeWithException(RuntimeException("400 code"))
+                            401 -> c.resumeWithException(UnauthorizedException())
+                            405 -> c.resumeWithException(MethodNotAllowedException())
+                            423 -> c.resumeWithException(LockedException())
+                        }
+                    }
+                }
+                rr.open(method = "POST", url = "$serverUrl/${url.removePrefix("/")}", async = true)
+                rr.send(formData)
+            }
+
+    suspend fun post(url: String): String =
+            suspendCoroutine { c ->
+                val rr = XMLHttpRequest()
+                rr.withCredentials = true
+
+                rr.onreadystatechange = {
+                    if (rr.readyState == XMLHttpRequest.DONE) {
+                        when (rr.status.toInt()) {
+                            200 -> c.resume(rr.responseText)
+                            204 -> c.resume("")
+                            400 -> c.resumeWithException(RuntimeException("400 code"))
+                            401 -> c.resumeWithException(UnauthorizedException())
+                            405 -> c.resumeWithException(MethodNotAllowedException())
+                            423 -> c.resumeWithException(LockedException())
+                        }
+                    }
+                }
+                rr.open(method = "POST", url = "$serverUrl/${url.removePrefix("/")}", async = true)
+                rr.send()
+            }
+
+    suspend fun post(url: String, formData: String): String =
+            suspendCoroutine { c ->
+                val rr = XMLHttpRequest()
+                rr.withCredentials = true
+
+                rr.onreadystatechange = {
+                    if (rr.readyState == XMLHttpRequest.DONE) {
+                        when (rr.status.toInt()) {
+                            200 -> c.resume(rr.responseText)
+                            204 -> c.resume("")
+                            400 -> c.resumeWithException(RuntimeException("400 code"))
+                            401 -> c.resumeWithException(UnauthorizedException())
+                            405 -> c.resumeWithException(MethodNotAllowedException())
+                            423 -> c.resumeWithException(LockedException())
+                        }
+                    }
+                }
+                rr.open(method = "POST", url = "$serverUrl/${url.removePrefix("/")}", async = true)
+                rr.send(formData)
+            }
+
+    suspend fun post(url: String, formData: FormData): String =
+            suspendCoroutine { c ->
+                val rr = XMLHttpRequest()
+                rr.withCredentials = true
+
+                rr.onreadystatechange = {
+                    if (rr.readyState == XMLHttpRequest.DONE) {
+                        when (rr.status.toInt()) {
+                            200 -> c.resume(rr.responseText)
+                            204 -> c.resume("")
+                            400 -> c.resumeWithException(RuntimeException("400 code"))
+                            401 -> c.resumeWithException(UnauthorizedException())
+                            405 -> c.resumeWithException(MethodNotAllowedException())
+                            423 -> c.resumeWithException(LockedException())
+                        }
+                    }
+                }
+                rr.open(method = "POST", url = "$serverUrl/${url.removePrefix("/")}", async = true)
+                rr.send(formData)
+            }
+}
+
+operator fun String.compareTo(func: TreeSecretedCssClass.() -> Unit): Int = 0
+
+fun initUi(user: User) {
+    LoginPage.dom.remove()
+    val mainLayout = FlexLayout(document.body!!)
+    NavigateMenu.appendTo(mainLayout, grow = 0, shrink = 0)
+
+    val pageLayout = DivLayout(direction = FlexLayout.Direction.Column)
     pageLayout.appendTo(mainLayout)
-//    val pageLayout = FlexLayout(document.body!!)
+
     BreadCrumbs.appendTo(pageLayout.layout, grow = 0, shrink = 0)
 
     HLine().appendTo(pageLayout.layout, grow = 0, shrink = 0)
@@ -160,8 +284,36 @@ fun main() {
     }
     PageView.start(RootPage, pageViewDiv)
     PageNavigator.start(RootPage)
+}
+
+fun main() {
+    CSS {
+        "*"{
+            minHeight = "0px"
+            minWidth = "0px"
+        }
+        "body" then {
+            height = "100%"
+            width = "100%"
+            margin = "0px"
+            backgroundColor = "#262626"
+        }
+    }
+    console.info("Hello!")
+
+    val login = LoginPage
+    document.body!!.append(login.dom)
+    async {
+        login.onStart()
+    }
+    return
+
+//    val pageLayout = FlexLayout(document.body!!)
+
+
     console.info(BreadCrumbs.dom)
     EventNotification.start()
+    /*
     EventBus.start()
     EventBus.wait {
         when (it) {
@@ -176,4 +328,5 @@ fun main() {
             }
         }
     }
+    */
 }

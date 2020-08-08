@@ -8,7 +8,14 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 @Serializable
-class JobDto(val cmd: String, val env: Map<String, String>, val include: Set<String>, val exclude: Set<String>, var nextBuild: Int)
+class JobDto(
+        var cmd: String,
+        val env: MutableMap<String, String>,
+        val include: MutableSet<String>,
+        val exclude: MutableSet<String>,
+        var nextBuild: Int,
+        var lastBuildTime: Long? = null
+)
 
 @Serializable
 class BuildDto(var status: BuildStatus) {

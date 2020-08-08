@@ -13,47 +13,57 @@ abstract class AbstractEntityHolderFile : EntityHolder, TaskStorage.Entity {
     abstract val taskStorage: TaskStorageFile
 
     override val path: String
-        get() = file.path.removePrefix(taskStorage.file.path)
+        get() = file.path.removePrefix("${taskStorage.file.path}/")
 
     override fun getEntity(path: String): TaskStorage.Entity? {
-        require(path !in "/")
+        require("/" !in path)
         val f = File(file, path)
-        return if (file.isJob) {
-            DirectionFile(f, taskStorage)
-        } else {
+        if (!f.isExist)
+            return null
+        println("${f} isJob=${f.isJob}")
+        return if (f.isJob) {
+            println("Returns job")
             JobFile(f, taskStorage)
+        } else {
+            println("Returns direction")
+            DirectionFile(f, taskStorage)
         }
     }
 
     override fun getEntityList(): List<TaskStorage.Entity>? {
         return file.iterator().use { it ->
             it.map {
-                if (it.isJob)
-                    DirectionFile(it, taskStorage)
-                else
-                    JobFile(it, taskStorage)
-            }
+                when {
+                    it.isJob -> JobFile(it, taskStorage)
+                    it.isDirectory -> DirectionFile(it, taskStorage)
+                    else -> null
+                }
+            }.filterNotNull()
         }
     }
 
-    override fun createJob(name: String, config: TaskStorage.JobConfig) {
+    override fun createJob(name: String, config: TaskStorage.JobConfig): TaskStorage.Job {
         require(path !in "/")
-        val jobText = taskStorageJsonSerialization.stringify(JobDto.serializer(), JobDto(
+        val dto = JobDto(
                 cmd = config.cmd,
-                env = config.env,
-                include = config.include,
-                exclude = config.exclude,
+                env = config.env.toMutableMap(),
+                include = config.include.toMutableSet(),
+                exclude = config.exclude.toMutableSet(),
                 nextBuild = 1
-        ))
+        )
+        val jobText = taskStorageJsonSerialization.stringify(JobDto.serializer(), dto)
         val dir = File(file, name)
         File(dir, "job.json").write().utf8Appendable().use {
             it.append(jobText)
         }
+        return JobFile(dir, taskStorage)
     }
 
-    override fun createDirection(name: String) {
+    override fun createDirection(name: String): TaskStorage.Direction {
         require(path !in "/")
-        File(file, name).mkdirs()
+        val f = File(file, name)
+        f.mkdirs()
+        return DirectionFile(f, taskStorage)
     }
 
 }

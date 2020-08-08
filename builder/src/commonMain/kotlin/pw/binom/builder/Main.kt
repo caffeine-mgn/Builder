@@ -21,15 +21,16 @@ abstract class NetTask : Cmd() {
 */
 class RunServer : Cmd() {
     override val description: String?
-        get() = "Starts Build Server"
+        get() = "Starts Master Node"
+
     private val projectDir by param("project-dir", "Project for search jobs")
             .require()
-            .file()
-            .dirExist()
+            .path()
+            .createDir()
 
     private val bind by paramList("bind", "Bind interface")
             .require()
-            .url()
+            .hostPort()
 
     private val rootUri by param("uri", "URI path to Web")
             .default { "/" }
@@ -40,7 +41,7 @@ class RunServer : Cmd() {
     override fun execute(): Result = action {
 
         val strong = Strong.create(masterConfig(
-                bind = bind.map { it.host to (it.port ?: it.defaultPort!!) },
+                bind = bind,
                 tasksRoot = projectDir,
                 telegramToken = telegramToken
         ))

@@ -6,11 +6,14 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
+import pw.binom.builder.Event
 import pw.binom.builder.master.SlaveService
-import pw.binom.builder.master.TaskScheduler
+import pw.binom.builder.master.controllers.toDTO
+import pw.binom.builder.master.services.TaskSchedulerService
 import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.builder.master.taskStorage.findEntity
 import pw.binom.builder.node.ClientThread
+import pw.binom.strong.EventSystem
 import pw.binom.strong.Strong
 
 @OptIn(ImplicitReflectionSerializer::class)
@@ -46,6 +49,7 @@ sealed class Action {
     class TaskStatusChange(val path: String, val buildNumber: Int, val status: TaskStorage.JobStatusType) : Action() {
         override suspend fun executeMaster(slave: SlaveService.Slave, strong: Strong): Action? {
             val taskStorage by strong.service<TaskStorage>()
+            val eventSystem by strong.service<EventSystem>()
             val entity = taskStorage.findEntity(path)
             if (entity == null) {
                 println("Can't find task \"$path\"")
@@ -54,6 +58,15 @@ sealed class Action {
             val job = entity as TaskStorage.Job
             val build = job.getBuild(buildNumber)!!
             build.status = this.status
+
+            eventSystem.dispatch(
+                    Event.TaskChangeStatus(
+                            path = path,
+                            worker = slave.toDTO(),
+                            buildNumber = buildNumber,
+                            status = status.toDTO()
+                    )
+            )
             return null
         }
     }
@@ -139,7 +152,7 @@ sealed class Action {
     @Serializable
     class RejectExecute(val path: String, val buildNumber: Int) : Action() {
         override suspend fun executeMaster(slave: SlaveService.Slave, strong: Strong): Action? {
-            val taskScheduler by strong.service<TaskScheduler>()
+            val taskScheduler by strong.service<TaskSchedulerService>()
             //taskScheduler.submitTask(path, buildNumber)
             return null
         }

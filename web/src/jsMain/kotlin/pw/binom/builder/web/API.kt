@@ -1,21 +1,14 @@
 package pw.binom.builder.web
 
-import org.w3c.xhr.XMLHttpRequest
-import pw.binom.builder.remote.AbstractClient
-import pw.binom.builder.remote.DTO_LIST
-import pw.binom.builder.remote.JobProcess
 import pw.binom.builder.web.dto.LastOutDto
-import pw.binom.io.Closeable
-import pw.binom.io.asAsync
-import pw.binom.json.*
-import pw.binom.krpc.Struct
-import pw.binom.krpc.StructFactory
-import pw.binom.rpc.JsonRpc
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 object API
+object Client {
+    suspend fun login(login: String, password: String) {
 
+    }
+}
+/*
 object Client : AbstractClient() {
     override fun events(func: (Struct?) -> Unit): Closeable =
             Request.tail("/api/events") {
@@ -55,9 +48,8 @@ object Client : AbstractClient() {
             }
         }
     }
-
 }
-
+*/
 //interface AsyncResponse<T> : Closeable {
 //    fun subscribe(func: (T) -> Unit): Closeable
 //}

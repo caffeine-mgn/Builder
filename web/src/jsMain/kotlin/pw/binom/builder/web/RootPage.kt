@@ -6,7 +6,8 @@ object RootPage : Page() {
     override suspend fun next(page: String): Page? =
             when (page) {
                 "tasks" -> TasksPage("")
-                "nodes" -> NodesPage()
+//                "nodes" -> NodesPage()
+                "workers" -> WorkersPage()
                 "" -> ForwardPage("$uiUrl/tasks")
                 else -> super.next(page)
             }

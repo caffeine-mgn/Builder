@@ -17,7 +17,7 @@ private class NavigationButton(text: String, href: String) : AbstractComponent<H
 
 object NavigateMenu : DivComponentWithLayout(direction = FlexLayout.Direction.Column) {
     private val tasks = NavigationButton("Tasks", "tasks").appendTo(layout, grow = 0, shrink = 0)
-    private val nodes = NavigationButton("Nodes", "nodes").appendTo(layout, grow = 0, shrink = 0)
+    private val workers = NavigationButton("Workers", "workers").appendTo(layout, grow = 0, shrink = 0)
 
     init {
         dom.style.apply {

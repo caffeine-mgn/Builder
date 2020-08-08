@@ -1,9 +1,8 @@
 package pw.binom.builder.web
 
-import pw.binom.builder.remote.*
 import pw.binom.io.Closeable
 import kotlin.dom.addClass
-
+/*
 class NodesPage : Page() {
     override suspend fun getTitle(): String = "Nodes"
 
@@ -82,3 +81,4 @@ class NodesPage : Page() {
         super.onStop()
     }
 }
+ */

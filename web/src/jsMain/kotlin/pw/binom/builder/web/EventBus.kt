@@ -1,8 +1,9 @@
 package pw.binom.builder.web
-
+/*
 import pw.binom.io.Closeable
 import pw.binom.krpc.Struct
 import kotlin.browser.window
+
 
 object EventBus {
     private val listener: (Struct?) -> Unit = {event->
@@ -29,4 +30,4 @@ object EventBus {
             }
         }
     }
-}
+}*/

@@ -61,11 +61,12 @@ kotlin {
                 api "pw.binom.io:thread:$network_version"
                 api "pw.binom.io:logger:$network_version"
                 api "pw.binom.io:flux:$network_version"
+                api "pw.binom.io:sqlite:$network_version"
                 api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
                 api project(":common")
             }
 
-//            kotlin.srcDir('build/gen/server')
+            kotlin.srcDir('build/gen/server')
         }
 
         commonTest {
@@ -126,23 +127,21 @@ task generateJsSource(type: ResourceSourceGenerator) {
     destination = file("${project.buildFile.parentFile}/build/gen/server/resources.kt")
     packageName = "pw.binom.builder"
     objectName = "Resources"
-    /*
+
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/kotlin.js"), "kotlin_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/common.js"), "common_js")
-    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/json.js"), "json_js")
-    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/rpcJson.js"), "rpcJson_js")
-    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/krpc.js"), "rpc_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/core.js"), "core_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/web.js"), "web_js")
+    addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/kotlinx-serialization-kotlinx-serialization-runtime.js"), "kotlinx_serialization_js")
     addFile(file("${project(":web").buildDir}/kotlin-js-min/js/main/org.tlsys.css.js"), "css_js")
-    */
+    addFile(file("src/commonMain/resources/light-background.jpg"))
     addFile(file("src/commonMain/resources/ace.js"))
-    addFile(file("src/commonMain/resources/tomorrow_night.js"))
+    addFile(file("src/commonMain/resources/theme-tomorrow_night.js"))
     addFile(file("src/commonMain/resources/mode-sh.js"))
 }
 
 
-/*
+
 compileKotlinJvm {
     dependsOn generateJsSource
 }
@@ -162,7 +161,7 @@ linkReleaseExecutableMingwX64 {
 linkReleaseExecutableMingwX86 {
     dependsOn generateJsSource
 }
-*/
+
 jvmJar {
     with {
         from {

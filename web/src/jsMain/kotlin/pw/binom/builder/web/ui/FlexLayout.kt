@@ -2,6 +2,7 @@ package pw.binom.builder.web
 
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.Node
 import org.w3c.dom.get
 import kotlin.js.Promise
 
@@ -293,3 +294,117 @@ class FlexLayout<T : HTMLElement>(parent: T, direction: Direction = Direction.Ro
         }
     }
 }
+
+fun Node.nodeIterator() = object : MutableIterator<Node> {
+    private var current: Node? = null
+    private var started = false
+    override fun hasNext(): Boolean {
+        if (current != null)
+            return true
+        if (!started) {
+            current = firstChild
+            started = true
+        }
+        return current != null
+    }
+
+    override fun next(): Node {
+        if (!hasNext())
+            throw NoSuchElementException()
+        val r = current!!
+        current = r.previousSibling
+        if (current == null)
+            started = false
+        return r
+    }
+
+    override fun remove() {
+        if (current == null)
+            throw NoSuchElementException()
+        val r = current!!
+        current = r.previousSibling
+        if (current == null) {
+            started = false
+        }
+        r.parentNode?.removeChild(r)
+    }
+
+}
+
+fun <T> MutableIterator<T>.filter(filter: (T) -> Boolean) =
+        object : MutableIterator<T> {
+            private var nextExist = false
+            private var end = false
+            private var next: T? = null
+            private fun refresh() {
+                if (end)
+                    return
+                if (nextExist)
+                    return
+                while (this@filter.hasNext()) {
+                    next = this@filter.next()
+                    if (filter(next as T)) {
+                        nextExist = true
+                        return
+                    }
+                }
+                end = true
+                next = null
+            }
+
+            override fun hasNext(): Boolean {
+                refresh()
+                return nextExist
+            }
+
+            override fun next(): T {
+                refresh()
+                if (nextExist) {
+                    nextExist = false
+                    return next as T
+                } else
+                    throw NoSuchElementException()
+            }
+
+            override fun remove() {
+                this@filter.remove()
+                nextExist = false
+            }
+        }
+
+fun <T, R> MutableIterator<T>.map(func: (T) -> R) = object : MutableIterator<R> {
+    override fun hasNext(): Boolean = this@map.hasNext()
+
+    override fun next(): R = func(this@map.next())
+
+    override fun remove() {
+        this@map.remove()
+    }
+}
+
+fun <T> MutableIterator<T>.removeIf(func: (T) -> Boolean): Int {
+    var c = 0
+    while (hasNext()) {
+        if (func(next())) {
+            c++
+            remove()
+        }
+    }
+    return c
+}
+
+fun <T> Iterator<T>.find(func: (T) -> Boolean): T? {
+    while (hasNext()) {
+        val r = next()
+        if (func(r))
+            return r
+    }
+    return null
+}
+
+inline fun <reified K : Component<*>> FlexLayout<*>.elementIterator() =
+        dom.nodeIterator()
+                .filter {
+                    it.asDynamic().CONTROL is K
+                }
+                .map { it.asDynamic().CONTROL.unsafeCast<K>() }

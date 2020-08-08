@@ -1,6 +1,7 @@
 package pw.binom.builder.master.taskStorage
 
 import kotlinx.serialization.Serializable
+import pw.binom.builder.Event
 
 interface TaskStorage : EntityHolder {
     interface Entity {
@@ -13,6 +14,8 @@ interface TaskStorage : EntityHolder {
                 else
                     path.substring(i + 1)
             }
+
+        fun delete()
     }
 
 
@@ -28,15 +31,27 @@ interface TaskStorage : EntityHolder {
         fun getBuilds(): List<Build>
         fun createBuild(): Build
         val config: JobConfig
+        fun update(config: JobConfig)
+        fun updateLastBuildTime(time: Long)
+        val lastBuildTime: Long?
     }
 
     @Serializable
-    enum class JobStatusType(val terminateState:Boolean) {
+    enum class JobStatusType(val terminateState: Boolean) {
         PREPARE(false),
         PROCESS(false),
         FINISHED_OK(true),
         FINISHED_ERROR(true),
-        CANCELED(true)
+        CANCELED(true);
+
+        fun toDTO()=
+                when (this) {
+                    PREPARE -> Event.TaskChangeStatus.JobStatusType.PREPARE
+                    PROCESS -> Event.TaskChangeStatus.JobStatusType.PROCESS
+                    FINISHED_OK -> Event.TaskChangeStatus.JobStatusType.FINISHED_OK
+                    FINISHED_ERROR -> Event.TaskChangeStatus.JobStatusType.FINISHED_ERROR
+                    CANCELED -> Event.TaskChangeStatus.JobStatusType.CANCELED
+                }
     }
 
     interface Build {

@@ -10,7 +10,7 @@ import pw.binom.strong.Strong
 
 class RunNode : pw.binom.builder.Cmd() {
     override val description: String?
-        get() = "Starts Build Node"
+        get() = "Starts Worker"
     val envs by paramList("env").convert {
         it.asSequence().map {
             val item = it.split('=', limit = 2)
@@ -21,14 +21,19 @@ class RunNode : pw.binom.builder.Cmd() {
 
     private val bashPath by param("bash-path", "Path to Bash. For example, on linux using \"/bin/bash\". On Windows use cygwin")
             .require()
-            .file()
+            .path()
             .fileExist()
 
     private val buildPath by param("build-path")
             .default { Environment.getEnv(SERVER_ADDR) }
             .require()
-            .file()
-            .dirExist()
+            .path()
+            .createDir()
+
+    private val count by param("j", "Count of worker")
+            .default { "1" }
+            .require()
+            .toInt()
 
     private val serverUrl by param("server")
             .require()
@@ -43,19 +48,28 @@ class RunNode : pw.binom.builder.Cmd() {
             .notBlank()
 
     override fun execute() = action {
-        val strong = Strong.create(slaveConfig(
-                serverUrL = serverUrl,
-                name = id,
-                tags = tags,
-                baseDir = buildPath,
-                bashPath = bashPath
-        ))
-        val clientThread by strong.service<ClientThread>()
-        clientThread.start()
-        Signal.addShutdownHook {
-            clientThread.interrupt()
+        require(count > 0)
+        val threads = (0 until count).map {
+            val strong = Strong.create(slaveConfig(
+                    serverUrL = serverUrl,
+                    name = id,
+                    tags = tags,
+                    baseDir = buildPath,
+                    bashPath = bashPath
+            ))
+            val clientThread by strong.service<ClientThread>()
+            clientThread.start()
+            clientThread
         }
-        clientThread.join()
+
+        Signal.addShutdownHook {
+            threads.forEach {
+                it.interrupt()
+            }
+        }
+        threads.forEach {
+            it.join()
+        }
 //        Node(
 //                bashPath = bashPath,
 //                buildPath = buildPath,

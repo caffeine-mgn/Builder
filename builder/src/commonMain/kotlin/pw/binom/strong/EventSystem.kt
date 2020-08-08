@@ -14,11 +14,11 @@ class EventSystem {
 
     fun <T : Any> listen(objectClass: KClass<T>, listener: (T) -> Unit): Closeable =
             lock.synchronize {
-//                val l = Listener(objectClass, listener)
-//                listeners.add(l as Listener<Any>)
                 listeners.getOrPut(objectClass as KClass<Any>) { ArrayList() }.add(listener as (Any) -> Unit)
                 Closeable {
-                    listeners.get(objectClass as KClass<Any>)?.remove(listener)
+                    lock.synchronize {
+                        listeners.get(objectClass as KClass<Any>)?.remove(listener)
+                    }
                 }
             }
 

@@ -1,5 +1,165 @@
 package pw.binom.builder.web
 
+import pw.binom.builder.Event
+import pw.binom.builder.dto.Entity
+import pw.binom.builder.web.services.EventService
+import pw.binom.builder.web.services.TaskSchedulerService
+import pw.binom.builder.web.services.TasksService
+import pw.binom.io.Closeable
+import kotlin.dom.clear
+
+class TasksPage(val path: String) : Page() {
+    override suspend fun getTitle(): String =
+            if (path.isEmpty())
+                "Tasks"
+            else
+                "Tasks ${path}"
+
+    private val list = DivLayout(direction = FlexLayout.Direction.Column).appendTo(layout)
+    private val scroll = ScrollController(list.dom)
+
+    override suspend fun onStart() {
+        super.onStart()
+        TasksService.getList(path)!!.forEach {
+            when (it) {
+                is Entity.Job -> TaskItem(it).appendTo(list.layout, grow = 0, shrink = 0)
+                is Entity.Direction -> TasksboxItem(it).appendTo(list.layout, grow = 0, shrink = 0)
+            }
+        }
+    }
+
+    private abstract class AbstractItem : DivComponentWithLayout(direction = FlexLayout.Direction.Column) {
+        protected val body = DivLayout(direction = FlexLayout.Direction.Row).appendTo(layout, grow = 0, shrink = 0)
+    }
+
+    private class TaskItem(task: Entity.Job) : AbstractItem() {
+        var task: Entity.Job = task
+            set(value) {
+                field = value
+                refresh()
+            }
+
+        private val childs = DivLayout(direction = FlexLayout.Direction.Column).appendTo(layout)
+
+        private var listener: Closeable? = null
+
+        private fun refresh() {
+            title.text = task.name
+//            run.dom.style.display = if (task.worker == null) "" else "none"
+//            cancel.dom.style.display = if (task.worker == null) "none" else ""
+        }
+
+        val title = Span().appendTo(body.layout)
+        val run = Button("Run").appendTo(body.layout, grow = 0, shrink = 0)
+        private val builds = HashMap<Entity.Job.Build, BuildItem>()
+
+        override suspend fun onStart() {
+            super.onStart()
+            listener = EventService.addListener { e ->
+                if (e is Event.TaskChangeStatus) {
+                    if (e.path != task.path)
+                        return@addListener
+                    console.info("${task.path} Event: $e")
+                    val build = task.builds.find { it.buildNumber == e.buildNumber }
+                    if (build == null) {
+                        if (!e.status.terminateState) {
+                            val b = Entity.Job.Build(
+                                    worker = e.worker,
+                                    buildNumber = e.buildNumber,
+                                    status = e.status
+                            )
+                            task.builds += b
+                            val item = BuildItem(b).appendTo(childs.layout, grow = 0, shrink = 0)
+                            builds[b] = item
+                        }
+                    } else {
+                        if (e.status.terminateState) {
+                            task.builds.remove(build)
+                            builds.remove(build)?.dom?.remove()
+                        } else {
+                            build.buildNumber = e.buildNumber
+                            build.status = e.status
+                            build.worker = e.worker
+                            builds[build]?.update()
+                        }
+                    }
+                }
+            }
+        }
+
+        override suspend fun onStop() {
+            listener?.close()
+            console.info("Stop ${task.path}")
+            super.onStop()
+        }
+
+        init {
+            childs.dom.style.paddingLeft = "15px"
+            refresh()
+            run.click {
+                async {
+                    TaskSchedulerService.run(task.path)
+                }
+            }
+        }
+    }
+
+    private class BuildItem(val build: Entity.Job.Build) : DivComponentWithLayout(direction = FlexLayout.Direction.Row) {
+        val status = Span().appendTo(layout)
+
+        fun update() {
+            status.text = build.status.name
+        }
+
+        init {
+            update()
+        }
+    }
+
+    private class TasksboxItem(task: Entity.Direction) : AbstractItem() {
+        var task: Entity.Direction = task
+            set(value) {
+                field = value
+                refresh()
+            }
+        private val childs = DivLayout(direction = FlexLayout.Direction.Column).appendTo(layout)
+
+        private fun refresh() {
+            title.text = task.name
+        }
+
+        val title = Span().appendTo(body.layout)
+        private var expand = false
+
+        init {
+            childs.dom.style.paddingLeft = "15px"
+            refresh()
+            title.dom.onclick = {
+                expand = !expand
+                if (!expand) {
+                    async {
+                        childs.onStop()
+                        childs.dom.clear()
+                        childs.dom.style.display = "none"
+                    }
+                } else {
+                    async {
+                        TasksService.getList(task.path)!!.forEach {
+                            when (it) {
+                                is Entity.Job -> TaskItem(it).appendTo(childs.layout, grow = 0, shrink = 0)
+                                is Entity.Direction -> TasksboxItem(it).appendTo(childs.layout, grow = 0, shrink = 0)
+                            }
+                        }
+                        childs.onStart()
+                        childs.dom.style.display = ""
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
 import pw.binom.builder.remote.TaskItem
 import pw.binom.io.UTF8
 import kotlin.dom.addClass
@@ -131,3 +291,5 @@ class LinkPlace : LinkComponentWithLayout() {
         layout.alignItems = FlexLayout.AlignItems.Center
     }
 }
+
+ */

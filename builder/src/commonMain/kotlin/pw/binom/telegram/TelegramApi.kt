@@ -85,6 +85,7 @@ class TelegramApi(var lastUpdate: Long, val token: String, manager: SocketNIOMan
 
     suspend fun sendMessage(message: TextMessage): Message {
         var url = baseUrl.appendDirectionURI("sendMessage")
+        println("msg: ${jj.stringify(TextMessage.serializer(), message)}")
         val response = client.request("POST", url)
                 .addHeader(Headers.CONTENT_TYPE, "application/json")
                 .upload().also {
@@ -92,6 +93,7 @@ class TelegramApi(var lastUpdate: Long, val token: String, manager: SocketNIOMan
                     Unit
                 }.response()
         val responseText = response.utf8Reader().use { it.readText() }
+        println("Response: $responseText")
         return jj.fromJson(Message.serializer(), getResult(responseText)!!)
     }
 

@@ -4,6 +4,8 @@ import kotlinx.serialization.Serializable
 import pw.binom.UUID
 import pw.binom.builder.Event
 import pw.binom.builder.common.Action
+import pw.binom.builder.master.taskStorage.TaskStorage
+import pw.binom.builder.master.taskStorage.findEntity
 import pw.binom.date.Date
 import pw.binom.io.Closeable
 import pw.binom.io.http.websocket.MessageType
@@ -16,6 +18,7 @@ import pw.binom.strong.Strong
 class SlaveService(strong: Strong) : Closeable {
 
     private val eventSystem by strong.service<EventSystem>()
+    private val taskStorage by strong.service<TaskStorage>()
 
     @Serializable
     class SlaveStatus(val jobPath: String, val buildNumber: Int)
@@ -27,11 +30,21 @@ class SlaveService(strong: Strong) : Closeable {
             var lastTime: Date,
             val connection: WebSocketConnection
     ) {
+        var statusChangeTime = 0L
         var status: SlaveStatus? = null
             set(value) {
+                if (value == field)
+                    return
+                if (field != null && value == null) {
+                    (taskStorage.findEntity(field!!.jobPath) as? TaskStorage.Job?)?.updateLastBuildTime(
+                            Date.now - statusChangeTime
+                    )
+                }
+
                 field = value
+                statusChangeTime = Date.now
                 val status = value?.let {
-                    Event.SlaveStatus(
+                    Event.NodeChangeStatus.SlaveStatus(
                             buildNumber = it.buildNumber,
                             jobPath = it.jobPath
                     )
@@ -60,6 +73,15 @@ class SlaveService(strong: Strong) : Closeable {
     fun uptodate(id: UUID) {
         nodes[id]?.lastTime = Date(Date.now)
     }
+
+    fun findWorkerOnWork(path: String) =
+            nodes.values.filter { it.status?.jobPath == path }
+
+    /**
+     * Returns exist task in [path]
+     */
+    fun isTaskHold(path: String) =
+            slaves.values.any { it.status?.jobPath?.startsWith(path) ?: false }
 
     fun findFreeSlave(inclide: Set<String>, exclude: Set<String>) =
             nodes.values.asSequence()

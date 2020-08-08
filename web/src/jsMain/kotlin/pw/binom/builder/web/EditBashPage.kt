@@ -1,4 +1,5 @@
 package pw.binom.builder.web
+/*
 
 import pw.binom.builder.remote.JobInformation
 
@@ -36,4 +37,4 @@ class EditBashPage(val path: String, var job: JobInformation) : Page() {
             }
         }
     }
-}
+}*/

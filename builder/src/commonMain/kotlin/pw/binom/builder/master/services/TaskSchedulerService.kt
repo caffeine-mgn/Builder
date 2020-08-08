@@ -1,8 +1,9 @@
-package pw.binom.builder.master
+package pw.binom.builder.master.services
 
 import pw.binom.async
 import pw.binom.builder.Event
 import pw.binom.builder.common.Action
+import pw.binom.builder.master.SlaveService
 import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.builder.master.taskStorage.findEntity
 import pw.binom.printStacktrace
@@ -10,16 +11,17 @@ import pw.binom.strong.EventSystem
 import pw.binom.strong.Strong
 import pw.binom.thread.Thread
 
-class TaskScheduler(strong: Strong) : Strong.InitializingBean {
+class TaskSchedulerService(strong: Strong) : Strong.InitializingBean {
 
     private data class ScheduledTask(val config: TaskStorage.JobConfig, val path: String, val buildNumber: Int)
 
     private val taskStorage by strong.service(TaskStorage::class)
     private val slaveService by strong.service<SlaveService>()
     private val eventSystem by strong.service<EventSystem>()
-//    private val slaveFreeTopic by strong.service<Topic<SlaveFreeEvent>>(SLAVE_FREE_TOPIC)
-
     private val scheduledTasks = ArrayList<ScheduledTask>()
+
+    fun findScheduled(path: String) =
+            scheduledTasks.filter { it.path == path }.map { it.buildNumber }
 
     class TaskNotFoundException(val path: String) : RuntimeException() {
         override val message: String?
@@ -50,6 +52,14 @@ class TaskScheduler(strong: Strong) : Strong.InitializingBean {
                     buildNumber = buildNumber,
                     path = path
             )
+            eventSystem.dispatch(
+                    Event.TaskChangeStatus(
+                            path = path,
+                            buildNumber = buildNumber,
+                            worker = null,
+                            status = Event.TaskChangeStatus.JobStatusType.PREPARE
+                    )
+            )
         } else {
             async {
                 try {
@@ -71,6 +81,7 @@ class TaskScheduler(strong: Strong) : Strong.InitializingBean {
 
     fun submitTask(path: String): Int? {
         val entity = taskStorage.findEntity(path) ?: return null
+        println("entity=${entity}  ${entity.path}")
         if (entity !is TaskStorage.Job)
             return null
         val build = entity.createBuild()

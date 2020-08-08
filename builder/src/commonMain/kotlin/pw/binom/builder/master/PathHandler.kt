@@ -55,26 +55,34 @@ val HttpRequest.contextUriWithoutParams: String
             contextUri.substring(0, p)
     }
 
-val HttpRequest.params: Map<String, String?>
+val HttpRequest.params: Map<String, List<String?>>
     get() {
         val p = contextUri.indexOf('?')
         return if (p == -1)
             emptyMap()
-        else
+        else {
+            val out = HashMap<String, ArrayList<String?>>()
             contextUri.substring(p + 1)
                     .splitToSequence('&')
                     .map {
                         val items = it.split('=')
                         items[0] to items.getOrNull(1)?.let { UTF8.urlDecode(it) }
-                    }.toMap()
+                    }.forEach {
+                        out.getOrPut(it.first) { ArrayList() }.add(it.second)
+                    }
+            out
+        }
     }
 
-private fun Map<String, String?>.asParamsURI(): String {
+private fun Map<String, List<String?>>.asParamsURI(): String {
     return if (isEmpty())
         ""
     else
-        "?" + asSequence().map {
-            if (it.value == null) it.key else "${it.key}=${UTF8.urlEncode(it.value!!)}"
+        "?" + asSequence().flatMap {
+            it.value.asSequence().map { e ->
+                if (e == null) it.key else "${it.key}=${UTF8.urlEncode(e)}"
+            }
+//            if (it.value == null) it.key else "${it.key}=${UTF8.urlEncode(it.value!!)}"
         }.joinToString("&")
 }
 

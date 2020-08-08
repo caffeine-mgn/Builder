@@ -2,10 +2,7 @@ package pw.binom.builder.master.taskStorage.file
 
 import pw.binom.builder.map
 import pw.binom.builder.master.taskStorage.TaskStorage
-import pw.binom.io.file.File
-import pw.binom.io.file.iterator
-import pw.binom.io.file.read
-import pw.binom.io.file.write
+import pw.binom.io.file.*
 import pw.binom.io.readText
 import pw.binom.io.use
 import pw.binom.io.utf8Appendable
@@ -16,6 +13,10 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
         File(file, "job.json").read().utf8Reader().use {
             taskStorageJsonSerialization.parse(JobDto.serializer(), it.readText())
         }
+    }
+
+    override fun delete() {
+        file.deleteRecursive()
     }
 
     override fun getBuild(build: Int): TaskStorage.Build? {
@@ -43,9 +44,7 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
         File(f, "output.txt").write().close()
 
         data.nextBuild = num + 1
-        File(file, "job.json").write().utf8Appendable().use {
-            it.append(taskStorageJsonSerialization.stringify(JobDto.serializer(), data))
-        }
+        saveConfig()
 
         return BuildFile(f, this)
     }
@@ -57,4 +56,29 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
                 include = data.include,
                 env = data.env
         )
+
+    override fun update(config: TaskStorage.JobConfig) {
+        data.cmd = config.cmd
+        data.env.clear()
+        data.env.putAll(config.env)
+        data.include.clear()
+        data.include.addAll(config.include)
+        data.exclude.clear()
+        data.exclude.addAll(config.exclude)
+        saveConfig()
+    }
+
+    override fun updateLastBuildTime(time: Long) {
+        data.lastBuildTime = time
+        saveConfig()
+    }
+
+    override val lastBuildTime: Long?
+        get() = data.lastBuildTime
+
+    private fun saveConfig() {
+        File(file, "job.json").write().utf8Appendable().use {
+            it.append(taskStorageJsonSerialization.stringify(JobDto.serializer(), data))
+        }
+    }
 }

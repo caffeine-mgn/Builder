@@ -1,4 +1,5 @@
 package pw.binom.builder.web
+/*
 
 import pw.binom.builder.remote.JobProcess
 import pw.binom.io.Closeable
@@ -38,4 +39,4 @@ class BuildPage(val executeJob: JobProcess) : Page() {
         outputView.clear()
         super.onStop()
     }
-}
+}*/

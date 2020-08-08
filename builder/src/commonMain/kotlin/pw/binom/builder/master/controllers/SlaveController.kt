@@ -1,7 +1,10 @@
-package pw.binom.builder.master
+package pw.binom.builder.master.controllers
 
 import pw.binom.UUID
 import pw.binom.builder.common.Action
+import pw.binom.builder.master.ActionExecutor
+import pw.binom.builder.master.SlaveService
+import pw.binom.flux.RootRouter
 import pw.binom.io.http.websocket.WebSocketClosedException
 import pw.binom.io.httpServer.websocket.WebSocketHandler
 import pw.binom.io.readText
@@ -10,9 +13,10 @@ import pw.binom.io.utf8Reader
 import pw.binom.printStacktrace
 import pw.binom.strong.Strong
 
-class SlaveHandler(val strong: Strong) : WebSocketHandler() {
+class SlaveController(val strong: Strong) : WebSocketHandler(), Strong.InitializingBean {
     private val slaveService by strong.service<SlaveService>()
     private val actionExecutor by strong.service<ActionExecutor>()
+    private val rootRouter by strong.service<RootRouter>()
 
     override suspend fun connected(request: ConnectRequest) {
         val slaveId = try {
@@ -61,6 +65,10 @@ class SlaveHandler(val strong: Strong) : WebSocketHandler() {
                 connection.close()
             }
         }
+    }
+
+    override fun init() {
+        rootRouter.route("/slave").forward(this)
     }
 
 }

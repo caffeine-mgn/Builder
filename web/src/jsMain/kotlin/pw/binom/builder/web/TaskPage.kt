@@ -1,7 +1,6 @@
 package pw.binom.builder.web
 
 import org.tlsys.css.CSS
-import pw.binom.builder.remote.*
 import pw.binom.io.UTF8
 import kotlin.browser.window
 import kotlin.dom.addClass
@@ -12,7 +11,7 @@ private val StatusStyle = CSS.style {
     paddingLeft = "15px"
     fontSize = "12px"
 }.name
-
+/*
 class TaskPage(val path: String, var job: JobInformation) : Page() {
     private val pathDecode = decodeURIComponent(path)
     override suspend fun getTitle(): String = getNameFromPath(pathDecode)
@@ -108,3 +107,5 @@ class TaskPage(val path: String, var job: JobInformation) : Page() {
         return super.next(page)
     }
 }
+
+ */
