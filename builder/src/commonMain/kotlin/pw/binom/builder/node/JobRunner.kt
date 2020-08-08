@@ -1,5 +1,5 @@
 package pw.binom.builder.node
-/*
+
 import pw.binom.Environment
 import pw.binom.builder.OutType
 import pw.binom.builder.common.Action
@@ -177,5 +177,3 @@ class JobRunner(
         cancelled = true
     }
 }
-
- */
