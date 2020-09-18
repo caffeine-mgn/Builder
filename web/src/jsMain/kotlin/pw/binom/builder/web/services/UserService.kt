@@ -14,14 +14,14 @@ object UserService {
                 form.append("login", login)
                 form.append("password", PasswordUtils.encode(password))
                 val output = Request1.post("/api/login", form)
-                Json.parse(User.serializer(), output)
+                Json.decodeFromString(User.serializer(), output)
             } catch (e: UnauthorizedException) {
                 null
             }
 
     suspend fun whoIAm() =
             try {
-                Json.parse(User.serializer(), Request1.get("/api/whoiam"))
+                Json.decodeFromString(User.serializer(), Request1.get("/api/whoiam"))
             } catch (e: UnauthorizedException) {
                 null
             }

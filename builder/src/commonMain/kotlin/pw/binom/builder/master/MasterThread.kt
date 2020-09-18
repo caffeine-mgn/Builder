@@ -1,22 +1,20 @@
 package pw.binom.builder.master
 
-import pw.binom.ByteBufferPool
 import pw.binom.flux.RootRouter
 import pw.binom.io.httpServer.HttpServer
 import pw.binom.io.socket.nio.SocketNIOManager
+import pw.binom.process.Signal
 import pw.binom.strong.Strong
-import pw.binom.thread.Thread
 
-class MasterThread(strong: Strong, val bind: List<Pair<String, Int>>) : Thread() {
+class MasterThread(strong: Strong, val bind: List<Pair<String, Int>>) {
     val rootRouter by strong.service<RootRouter>()
+    val manager by strong.service<SocketNIOManager>()
 
     init {
         require(bind.isNotEmpty())
     }
 
-    val manager = SocketNIOManager()
-
-    override fun run() {
+    fun run() {
         val server = HttpServer(manager, rootRouter,
                 poolSize = 30,
                 inputBufferSize = 1024 * 1024 * 3,
@@ -26,7 +24,7 @@ class MasterThread(strong: Strong, val bind: List<Pair<String, Int>>) : Thread()
             server.bindHTTP(host = it.first, port = it.second)
         }
 
-        while (!isInterrupted) {
+        while (!Signal.isInterrupted) {
             manager.update(1000)
         }
     }

@@ -24,7 +24,8 @@ kotlin {
             dependencies {
                 api "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
                 api "pw.binom.io:core:$network_version"
-                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
+                api "org.jetbrains.kotlinx:kotlinx-serialization-core:$serialization_version"
+//                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
             }
 
 //            kotlin.srcDir('build/gen/server')
@@ -34,7 +35,6 @@ kotlin {
         nativeMain {
             dependencies {
                 dependsOn commonMain
-                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serialization_version"
             }
         }
 
@@ -67,14 +67,14 @@ kotlin {
         jsMain {
             dependencies {
                 dependsOn commonMain
-                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version"
+//                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version"
             }
         }
 
         jvmMain {
             dependencies {
                 dependsOn commonMain
-                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+//                api "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
             }
         }
 

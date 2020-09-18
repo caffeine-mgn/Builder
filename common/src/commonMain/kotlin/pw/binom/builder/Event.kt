@@ -1,30 +1,32 @@
 package pw.binom.builder
 
-import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.serializer
+import kotlinx.serialization.modules.*
+import kotlinx.serialization.*
 import pw.binom.builder.dto.Worker
 
-@OptIn(ImplicitReflectionSerializer::class)
 private val dtoModule22 = SerializersModule {
-    this.polymorphic(Event::class.serializer())
+    this.contextual(Event.serializer())
 }
 
-private val eventJsonSerialization = Json(JsonConfiguration.Stable.copy(
-        classDiscriminator = "@t"
-), dtoModule22)
+private val eventJsonSerialization = Json {
+    classDiscriminator = "@t"
+    serializersModule = dtoModule22
+}
 
+/**
+ * Events between client and master-server
+ */
+@SerialName("event")
 @Serializable
 sealed class Event {
 
-    fun toJson(): String = eventJsonSerialization.stringify(serializer(), this)
+    fun toJson(): String = eventJsonSerialization.encodeToString(serializer(), this)
 
     companion object {
-        fun toEvent(json: String): Event = eventJsonSerialization.parse(serializer(), json)
+        fun toEvent(json: String): Event = eventJsonSerialization.decodeFromString(serializer(), json)
     }
 
     @SerialName("add_node")

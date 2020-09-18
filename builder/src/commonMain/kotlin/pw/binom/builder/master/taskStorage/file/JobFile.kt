@@ -11,7 +11,7 @@ import pw.binom.io.utf8Reader
 class JobFile(override val file: File, override val taskStorage: TaskStorageFile) : TaskStorage.Job, AbstractEntityHolderFile() {
     private val data by lazy {
         File(file, "job.json").read().utf8Reader().use {
-            taskStorageJsonSerialization.parse(JobDto.serializer(), it.readText())
+            taskStorageJsonSerialization.decodeFromString(JobDto.serializer(), it.readText())
         }
     }
 
@@ -39,7 +39,7 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
         val f = File(file, num.toString())
         f.mkdir()
         File(f, "build.json").write().utf8Appendable().use {
-            it.append(taskStorageJsonSerialization.stringify(BuildDto.serializer(), BuildDto(BuildDto.BuildStatus.PREPARE)))
+            it.append(taskStorageJsonSerialization.encodeToString(BuildDto.serializer(), BuildDto(BuildDto.BuildStatus.PREPARE)))
         }
         File(f, "output.txt").write().close()
 
@@ -78,7 +78,7 @@ class JobFile(override val file: File, override val taskStorage: TaskStorageFile
 
     private fun saveConfig() {
         File(file, "job.json").write().utf8Appendable().use {
-            it.append(taskStorageJsonSerialization.stringify(JobDto.serializer(), data))
+            it.append(taskStorageJsonSerialization.encodeToString(JobDto.serializer(), data))
         }
     }
 }

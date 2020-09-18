@@ -51,7 +51,7 @@ abstract class AbstractEntityHolderFile : EntityHolder, TaskStorage.Entity {
                 exclude = config.exclude.toMutableSet(),
                 nextBuild = 1
         )
-        val jobText = taskStorageJsonSerialization.stringify(JobDto.serializer(), dto)
+        val jobText = taskStorageJsonSerialization.encodeToString(JobDto.serializer(), dto)
         val dir = File(file, name)
         File(dir, "job.json").write().utf8Appendable().use {
             it.append(jobText)

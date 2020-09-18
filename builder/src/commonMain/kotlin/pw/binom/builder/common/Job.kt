@@ -1,28 +1,25 @@
 package pw.binom.builder.common
 
-import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.serializer
 import pw.binom.builder.node.Client
 
-@OptIn(ImplicitReflectionSerializer::class)
 private val dtoModule33 = SerializersModule {
-    this.polymorphic(Action::class.serializer())
+    this.polymorphic(Job::class, Job::class, Job.serializer())
 }
 
-private val jobJsonSerialization = Json(JsonConfiguration.Stable.copy(
-        classDiscriminator = "@class"
-), dtoModule33)
+private val jobJsonSerialization = Json {
+    classDiscriminator = "@class"
+    serializersModule = dtoModule33
+}
 
 @Serializable
 sealed class Job {
-    fun toJson(): String = jobJsonSerialization.stringify(serializer(), this)
+    fun toJson(): String = jobJsonSerialization.encodeToString(serializer(), this)
 
     companion object {
-        fun toJob(json: String): Job = jobJsonSerialization.parse(serializer(), json)
+        fun toJob(json: String): Job = jobJsonSerialization.decodeFromString(serializer(), json)
     }
 
     @Serializable

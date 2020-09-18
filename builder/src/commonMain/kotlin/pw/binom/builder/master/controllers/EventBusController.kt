@@ -11,55 +11,27 @@ import pw.binom.io.use
 import pw.binom.io.utf8Appendable
 import pw.binom.strong.EventSystem
 import pw.binom.strong.Strong
-import pw.binom.thread.Lock
-import pw.binom.thread.synchronize
 
 class EventBusHandler(val strong: Strong) : WebSocketHandler(), Strong.InitializingBean {
     private val eventSystem by strong.service<EventSystem>()
-    private val clientsLock = Lock()
     private val rootRouter by strong.service<RootRouter>()
 
     private var clients = HashSet<WebSocketConnection>()
     private val skipBuffer = ByteBuffer.alloc(DEFAULT_BUFFER_SIZE)
 
-//    init {
-//        async {
-//            while (true) {
-//                try {
-//                    val event = eventTopic.wait()
-//                    val eventJson = event.toJson()
-//                    clients.forEach {
-//                        val r = runCatching {
-//                            it.write(MessageType.TEXT).utf8Appendable().use {
-//                                it.append(eventJson)
-//                            }
-//                        }
-//                        if (r.isFailure) {
-//                            println("Error: ${r.exceptionOrNull()}")
-//                        }
-//                    }
-//                } catch (e: Throwable) {
-//                    e.printStacktrace()
-//                }
-//            }
-//        }
-//    }
-
     override suspend fun connected(request: ConnectRequest) {
-        val connection = clientsLock.synchronize {
+        val connection = run {
             val connection = request.accept()
             clients.add(connection)
             connection
         }
-        connection.incomeMessageListener = {
+        while (true) {
             try {
-                it.read().use {
+                connection.read().use {
                     it.skipAll(skipBuffer)
                 }
             } catch (e: WebSocketClosedException) {
-                clientsLock.synchronize {
-                    clients.remove(it)
-                }
+                clients.remove(connection)
             }
         }
     }
@@ -69,17 +41,23 @@ class EventBusHandler(val strong: Strong) : WebSocketHandler(), Strong.Initializ
         rootRouter.route("/events").forward(this)
 
         eventSystem.listen(Event::class) { event ->
+            println("Event got! $event. Listener count: ${clients.size}")
             async {
-                val eventJson = event.toJson()
-                clients.forEach {
-                    val result = runCatching {
-                        it.write(MessageType.TEXT).utf8Appendable().use {
-                            it.append(eventJson)
+                try {
+                    val eventJson = event.toJson()
+                    println("Try send $eventJson")
+                    clients.forEach {
+                        val result = runCatching {
+                            it.write(MessageType.TEXT).utf8Appendable().use {
+                                it.append(eventJson)
+                            }
+                        }
+                        if (result.isFailure) {
+                            result.exceptionOrNull()!!.printStackTrace()
                         }
                     }
-                    if (result.isFailure) {
-                        result.exceptionOrNull()!!.printStacktrace()
-                    }
+                } catch (e:Throwable) {
+                    e.printStackTrace()
                 }
             }
         }

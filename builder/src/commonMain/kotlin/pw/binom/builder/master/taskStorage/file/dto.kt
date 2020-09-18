@@ -1,9 +1,7 @@
 package pw.binom.builder.master.taskStorage.file
 
-import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
@@ -28,12 +26,12 @@ class BuildDto(var status: BuildStatus) {
     }
 }
 
-@OptIn(ImplicitReflectionSerializer::class)
 private val dtoModule = SerializersModule {
-    this.polymorphic(JobDto::class.serializer())
-    this.polymorphic(BuildDto::class.serializer())
+    this.polymorphic(JobDto::class, JobDto::class, JobDto.serializer())
+    this.polymorphic(BuildDto::class, BuildDto::class, BuildDto.serializer())
 }
 
-val taskStorageJsonSerialization = Json(JsonConfiguration.Stable.copy(
-        classDiscriminator = "@class"
-), dtoModule)
+val taskStorageJsonSerialization = Json {
+    classDiscriminator = "@class"
+    serializersModule = dtoModule
+}

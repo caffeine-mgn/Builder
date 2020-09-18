@@ -2,17 +2,16 @@ package pw.binom.builder.master.services
 
 import pw.binom.async
 import pw.binom.builder.Event
-import pw.binom.builder.common.Action
-import pw.binom.builder.master.SlaveService
+import pw.binom.builder.common.MasterDto
 import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.builder.master.taskStorage.findEntity
-import pw.binom.printStacktrace
+import pw.binom.io.http.websocket.MessageType
+import pw.binom.io.use
+import pw.binom.io.utf8Appendable
 import pw.binom.strong.EventSystem
 import pw.binom.strong.Strong
-import pw.binom.thread.Thread
 
-class TaskSchedulerService(strong: Strong) : Strong.InitializingBean {
-
+public class TaskSchedulerService2(strong: Strong) : Strong.InitializingBean {
     private data class ScheduledTask(val config: TaskStorage.JobConfig, val path: String, val buildNumber: Int)
 
     private val taskStorage by strong.service(TaskStorage::class)
@@ -61,19 +60,14 @@ class TaskSchedulerService(strong: Strong) : Strong.InitializingBean {
                     )
             )
         } else {
-            async {
-                try {
-                    println("Send execite to node... thread: ${Thread.currentThread.id}")
-                    slave.execute(Action.ExecuteTask(
-                            path = path,
-                            config = entity.config,
-                            buildNumber = buildNumber
-                    ))
-                    println("Sendded!")
-                } catch (e: Throwable) {
-                    e.printStacktrace()
-                }
-            }
+            println("Node founded. Sending task")
+                slave.send(
+                        MasterDto.StartBuild(
+                        config = entity.config,
+                        path = path,
+                        buildNumber = buildNumber
+                ))
+                println("Sendded!")
         }
 
         return buildNumber
@@ -90,7 +84,6 @@ class TaskSchedulerService(strong: Strong) : Strong.InitializingBean {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun init() {
-
         eventSystem.listen<Event.NodeChangeStatus> { event ->
             val task = scheduledTasks.removeLastOrNull() ?: return@listen
             val slave = slaveService.findFreeSlave(
@@ -101,22 +94,9 @@ class TaskSchedulerService(strong: Strong) : Strong.InitializingBean {
                 scheduledTasks.add(task)
                 return@listen
             }
-//            val slave = slaveService.slaves[UUID.fromString(event.slaveId)] ?: return@listen
-            async {
-                slave.execute(
-                        Action.ExecuteTask(
-                                path = task.path,
-                                config = task.config,
-                                buildNumber = task.buildNumber
-                        )
-                )
-            }
-        }
-//        async {
-//            while (true) {
-//                val event = slaveFreeTopic.wait()
-//                val task = scheduledTasks.removeLastOrNull() ?: continue
-//                event.slave.execute(
+
+//            async {
+//                slave.execute(
 //                        Action.ExecuteTask(
 //                                path = task.path,
 //                                config = task.config,
@@ -124,6 +104,6 @@ class TaskSchedulerService(strong: Strong) : Strong.InitializingBean {
 //                        )
 //                )
 //            }
-//        }
+        }
     }
 }

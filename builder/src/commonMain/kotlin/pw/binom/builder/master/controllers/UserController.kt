@@ -1,6 +1,7 @@
 package pw.binom.builder.master.controllers
 
-import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.list
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
@@ -114,7 +115,7 @@ class UserController(strong: Strong) : Strong.InitializingBean {
     }
 }
 
-@OptIn(ImplicitReflectionSerializer::class)
+@OptIn(InternalSerializationApi::class)
 inline suspend fun <reified T : Any> HttpResponse.jsonList(obj: List<T>) {
     status = 200
     addHeader(Headers.CONTENT_TYPE, "application/json; charset=utf-8")
@@ -122,10 +123,10 @@ inline suspend fun <reified T : Any> HttpResponse.jsonList(obj: List<T>) {
             ?: throw RuntimeException("Can't get serializer for ${T::class.simpleName}")
     complete()
             .utf8Appendable()
-            .append(Json.stringify(serializer.list, obj))
+            .append(Json.encodeToString(ListSerializer(serializer), obj))
 }
 
-@OptIn(ImplicitReflectionSerializer::class)
+@OptIn(InternalSerializationApi::class)
 inline suspend fun <reified T : Any> HttpResponse.json(obj: T) {
     status = 200
     addHeader(Headers.CONTENT_TYPE, "application/json; charset=utf-8")
@@ -133,7 +134,7 @@ inline suspend fun <reified T : Any> HttpResponse.json(obj: T) {
             ?: throw RuntimeException("Can't get serializer for ${T::class.simpleName}")
     complete()
             .utf8Appendable()
-            .append(Json.stringify(serializer, obj))
+            .append(Json.encodeToString(serializer, obj))
 }
 
 val HttpRequest.session: UUID?

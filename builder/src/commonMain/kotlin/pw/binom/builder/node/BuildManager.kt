@@ -6,6 +6,7 @@ import pw.binom.strong.Strong
 import pw.binom.uuid
 import kotlin.random.Random
 
-class BuildManager(strong: Strong, val basePath: File) {
-    fun prepareBuildDir() = File(basePath, Random.uuid().toShortString()).apply { mkdirs() }
+class BuildManager(strong: Strong) {
+    val config by strong.service<NodeConfig>()
+    fun prepareBuildDir() = File(config.baseDir, Random.uuid().toShortString()).apply { mkdirs() }
 }

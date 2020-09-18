@@ -2,7 +2,8 @@ package pw.binom.builder.cli
 
 import pw.binom.Environment
 import pw.binom.builder.*
-import pw.binom.builder.node.ClientThread
+import pw.binom.builder.node.Client2
+import pw.binom.builder.node.NodeConfig
 import pw.binom.builder.node.slaveConfig
 import pw.binom.getEnv
 import pw.binom.process.Signal
@@ -49,27 +50,17 @@ class RunNode : pw.binom.builder.Cmd() {
 
     override fun execute() = action {
         require(count > 0)
-        val threads = (0 until count).map {
-            val strong = Strong.create(slaveConfig(
-                    serverUrL = serverUrl,
-                    name = id,
-                    tags = tags,
-                    baseDir = buildPath,
-                    bashPath = bashPath
-            ))
-            val clientThread by strong.service<ClientThread>()
-            clientThread.start()
-            clientThread
-        }
 
-        Signal.addShutdownHook {
-            threads.forEach {
-                it.interrupt()
-            }
-        }
-        threads.forEach {
-            it.join()
-        }
+        val config=NodeConfig(
+                serverUrl = serverUrl,
+                name = id,
+                tags = tags,
+                baseDir = buildPath,
+                bashPath = bashPath
+        )
+        val strong = Strong.create(slaveConfig(config))
+        val clientThread by strong.service<Client2>()
+        clientThread.start()
 //        Node(
 //                bashPath = bashPath,
 //                buildPath = buildPath,

@@ -4,7 +4,9 @@ import pw.binom.async
 import pw.binom.atomic.AtomicBoolean
 import pw.binom.atomic.AtomicReference
 import pw.binom.io.socket.nio.SocketNIOManager
-import pw.binom.thread.Thread
+import pw.binom.process.Signal
+
+//import pw.binom.thread.Thread
 
 fun <T> SocketNIOManager.sync(func: suspend () -> T): T {
     val done = AtomicBoolean(false)
@@ -18,7 +20,7 @@ fun <T> SocketNIOManager.sync(func: suspend () -> T): T {
         }
     }
 
-    while (!done.value && !Thread.currentThread.isInterrupted) {
+    while (!done.value && !Signal.isInterrupted) {
         println("execute....")
         update(1000)
     }

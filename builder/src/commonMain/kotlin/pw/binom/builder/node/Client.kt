@@ -2,7 +2,7 @@ package pw.binom.builder.node
 
 import pw.binom.URL
 import pw.binom.UUID
-import pw.binom.builder.master.SlaveService
+import pw.binom.builder.master.services.SlaveService
 
 interface Client {
     var state: SlaveService.SlaveStatus?

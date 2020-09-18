@@ -1,7 +1,7 @@
 package pw.binom.builder.master.controllers
 
 import pw.binom.builder.dto.Worker
-import pw.binom.builder.master.SlaveService
+import pw.binom.builder.master.services.SlaveService
 import pw.binom.flux.RootRouter
 import pw.binom.flux.get
 import pw.binom.strong.Strong

@@ -2,7 +2,7 @@ package pw.binom.telegram
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UnstableDefault
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.list
 import kotlinx.serialization.json.*
 import pw.binom.URL
@@ -18,13 +18,13 @@ class TelegramApi(var lastUpdate: Long, val token: String, manager: SocketNIOMan
     val client = AsyncHttpClient(manager)
     val baseUrl = URL("https://api.telegram.org/bot${UTF8.urlEncode(token)}")
 
-    private val jj = Json(JsonConfiguration.Default.copy(
-            ignoreUnknownKeys = true,
-            isLenient = true,
-            serializeSpecialFloatingPointValues = true,
-            allowStructuredMapKeys = true,
-            encodeDefaults = false
-    ))
+    private val jj = Json{
+        ignoreUnknownKeys = true
+        isLenient = true
+        allowSpecialFloatingPointValues = true
+        allowStructuredMapKeys = true
+        encodeDefaults = false
+    }
 
     @Serializable
     enum class ParseMode {
@@ -85,19 +85,18 @@ class TelegramApi(var lastUpdate: Long, val token: String, manager: SocketNIOMan
 
     suspend fun sendMessage(message: TextMessage): Message {
         var url = baseUrl.appendDirectionURI("sendMessage")
-        println("msg: ${jj.stringify(TextMessage.serializer(), message)}")
+        println("msg: ${jj.encodeToString(TextMessage.serializer(), message)}")
         val response = client.request("POST", url)
                 .addHeader(Headers.CONTENT_TYPE, "application/json")
                 .upload().also {
-                    it.utf8Appendable().append(jj.stringify(TextMessage.serializer(), message))
+                    it.utf8Appendable().append(jj.encodeToString(TextMessage.serializer(), message))
                     Unit
                 }.response()
         val responseText = response.utf8Reader().use { it.readText() }
         println("Response: $responseText")
-        return jj.fromJson(Message.serializer(), getResult(responseText)!!)
+        return jj.decodeFromJsonElement(Message.serializer(), getResult(responseText)!!)
     }
 
-    @OptIn(UnstableDefault::class)
     suspend fun getUpdate(): List<Update> {
         var url = baseUrl.appendDirectionURI("getUpdates?offset=${lastUpdate + 1}&timeout=${60}")
         val json = client.request("GET", url)
@@ -106,7 +105,7 @@ class TelegramApi(var lastUpdate: Long, val token: String, manager: SocketNIOMan
                     it.readText()
                 }
         val resultJsonTree = getResult(json)
-        val updates = jj.fromJson(Update.serializer().list, resultJsonTree!!.jsonArray)
+        val updates = jj.decodeFromJsonElement(ListSerializer(Update.serializer()), resultJsonTree!!.jsonArray)
         val updateId = updates.lastOrNull()?.updateId
         if (updateId != null) {
             lastUpdate = updateId
@@ -115,14 +114,14 @@ class TelegramApi(var lastUpdate: Long, val token: String, manager: SocketNIOMan
     }
 
     private fun getResult(json: String): JsonElement? {
-        val tree = Json.parseJson(json).jsonObject
-        if (tree["ok"]?.boolean != true) {
-            val code = tree["error_code"]!!.int
+        val tree = Json.parseToJsonElement(json).jsonObject
+        if (tree["ok"]?.jsonPrimitive?.boolean != true) {
+            val code = tree["error_code"]!!.jsonPrimitive.int
             throw when (code) {
                 400 -> ChatNotFoundException()
                 else -> TelegramException(
                         code = code,
-                        description = tree["description"]!!.content
+                        description = tree["description"]!!.jsonPrimitive.content
                 )
             }
         }

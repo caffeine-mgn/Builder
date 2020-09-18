@@ -21,7 +21,7 @@ class BuildFile(val file: File, override val job: TaskStorage.Job) : TaskStorage
 
     private val data by lazy {
         File(file, "build.json").read().utf8Reader().use {
-            taskStorageJsonSerialization.parse(BuildDto.serializer(), it.readText())
+            taskStorageJsonSerialization.decodeFromString(BuildDto.serializer(), it.readText())
         }
     }
 
@@ -44,7 +44,7 @@ class BuildFile(val file: File, override val job: TaskStorage.Job) : TaskStorage
                 TaskStorage.JobStatusType.CANCELED -> BuildDto.BuildStatus.CANCELED
             }
             File(file, "build.json").write().utf8Appendable().use {
-                it.append(taskStorageJsonSerialization.stringify(BuildDto.serializer(), data))
+                it.append(taskStorageJsonSerialization.encodeToString(BuildDto.serializer(), data))
             }
         }
 

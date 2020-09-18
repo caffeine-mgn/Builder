@@ -3,10 +3,10 @@ package pw.binom.builder.master.controllers
 import kotlinx.serialization.json.Json
 import pw.binom.builder.Event
 import pw.binom.builder.dto.Entity
-import pw.binom.builder.master.SlaveService
+import pw.binom.builder.master.services.SlaveService
 import pw.binom.builder.master.contextUriWithoutParams
 import pw.binom.builder.master.params
-import pw.binom.builder.master.services.TaskSchedulerService
+import pw.binom.builder.master.services.TaskSchedulerService2
 import pw.binom.builder.master.taskStorage.EntityHolder
 import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.builder.master.taskStorage.findEntity
@@ -19,7 +19,7 @@ class TasksController(strong: Strong) : Strong.InitializingBean {
 
     private val flux by strong.service<RootRouter>()
     private val taskStorage by strong.service<TaskStorage>()
-    private val taskSchedulerService by strong.service<TaskSchedulerService>()
+    private val taskSchedulerService by strong.service<TaskSchedulerService2>()
     private val slaveService by strong.service<SlaveService>()
 
     override fun init() {
@@ -69,7 +69,7 @@ class TasksController(strong: Strong) : Strong.InitializingBean {
                 it.resp.status = 405
                 return@put true
             }
-            entity.update(Json.parse(Entity.JobConfig.serializer(), it.req.input.utf8Reader().readText()).toInternal())
+            entity.update(Json.decodeFromString(Entity.JobConfig.serializer(), it.req.input.utf8Reader().readText()).toInternal())
             it.resp.status = 204
             it.resp.complete()
             true
@@ -94,7 +94,7 @@ class TasksController(strong: Strong) : Strong.InitializingBean {
                 it.resp.json(parent.createDirection(name).toDTO())
                 return@post true
             } else {
-                val config = Json.parse(Entity.JobConfig.serializer(), it.req.input.utf8Reader().readText()).toInternal()
+                val config = Json.decodeFromString(Entity.JobConfig.serializer(), it.req.input.utf8Reader().readText()).toInternal()
                 val job = parent.createJob(
                         name = name,
                         config = config

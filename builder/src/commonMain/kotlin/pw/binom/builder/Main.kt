@@ -47,15 +47,7 @@ class RunServer : Cmd() {
         ))
 
         val masterThread by strong.service<MasterThread>()
-
-        masterThread.start()
-        Signal.addShutdownHook {
-            println("Shutdown!")
-            masterThread.interrupt()
-            masterThread.join()
-            println("OK!")
-        }
-        masterThread.join()
+        masterThread.run()
 //        Server(
 //                jobsPath = projectDir,
 //                bind = bind.map { it.host to (it.port ?: it.defaultPort!!) },

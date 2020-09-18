@@ -1,7 +1,7 @@
 package pw.binom.builder.master.controllers
 
 import pw.binom.builder.master.contextUriWithoutParams
-import pw.binom.builder.master.services.TaskSchedulerService
+import pw.binom.builder.master.services.TaskSchedulerService2
 import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.builder.master.taskStorage.findEntity
 import pw.binom.flux.RootRouter
@@ -14,7 +14,7 @@ class TaskSchedulerController(strong: Strong) : Strong.InitializingBean {
 
     private val flux by strong.service<RootRouter>()
     private val taskStorage by strong.service<TaskStorage>()
-    private val taskSchedulerService by strong.service<TaskSchedulerService>()
+    private val taskSchedulerService by strong.service<TaskSchedulerService2>()
 
     override fun init() {
         flux.post("/api/scheduler/run/*") {

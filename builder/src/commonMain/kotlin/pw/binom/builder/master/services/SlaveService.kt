@@ -1,9 +1,9 @@
-package pw.binom.builder.master
+package pw.binom.builder.master.services
 
 import kotlinx.serialization.Serializable
 import pw.binom.UUID
 import pw.binom.builder.Event
-import pw.binom.builder.common.Action
+import pw.binom.builder.common.MasterDto
 import pw.binom.builder.master.taskStorage.TaskStorage
 import pw.binom.builder.master.taskStorage.findEntity
 import pw.binom.date.Date
@@ -57,11 +57,27 @@ class SlaveService(strong: Strong) : Closeable {
                 )
             }
 
-        suspend fun execute(action: Action) {
-            connection.write(MessageType.TEXT).utf8Appendable().use {
-                it.append(action.toJson())
+        fun send(dto:MasterDto){
+            try {
+                connection.write(MessageType.TEXT) {
+                    try {
+                        it.utf8Appendable().use {
+                            it.append(dto.toJson())
+                        }
+                    } catch (e:Throwable){
+                        e.printStackTrace()
+                    }
+                }
+            }catch (e:Throwable){
+                e.printStackTrace()
             }
         }
+
+//        suspend fun execute(action: Action) {
+//            connection.write(MessageType.TEXT).utf8Appendable().use {
+//                it.append(action.toJson())
+//            }
+//        }
     }
 
     private val nodes = HashMap<UUID, Slave>()
